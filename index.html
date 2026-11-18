@@ -63,8 +63,7 @@
     .artist-card:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
     .artist-portrait { height: min(64vh, 560px); min-height: 340px; position: relative; overflow: hidden; display: grid; place-items: center; border-radius: 12px; background: var(--portrait-color, #829078); }
     .artist-portrait:after { content: ""; position: absolute; inset: 30% 0 0; background: linear-gradient(transparent, #141914d9); pointer-events: none; }
-    .artist-photo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .45s ease; }
-    .artist-card:hover .artist-photo, .artist-card:focus-visible .artist-photo { transform: scale(1.055); }
+    .artist-photo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; transition: transform .45s ease; }
     .portrait-initial { position: relative; font-family: var(--serif); color: #fffefa; font-size: 88px; opacity: .9; }
     .artist-meta { position: absolute; z-index: 1; bottom: 0; left: 0; right: 0; padding: 22px; display: flex; justify-content: space-between; gap: 9px; align-items: flex-end; color: white; }
     .artist-meta strong { display: block; font-family: var(--serif); font-size: 24px; font-weight: 400; }
@@ -86,7 +85,7 @@
     .art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 19px; }
     .art-card { background: var(--white); border: 1px solid var(--line); }
     .art-image { position: relative; height: 230px; overflow: hidden; background: #d6c6ab; }
-    .art-image img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .art-image img { width: 100%; height: 100%; display: block; object-fit: contain; background: #f0e5e9; }
     .art-image .art-abstract { width: 100%; height: 100%; display: block; position: relative; overflow: hidden; }
     .art-abstract:before, .art-abstract:after { content: ""; position: absolute; border-radius: 50%; }
     .art-abstract:before { width: 175px; height: 175px; background: #fff8; left: 12%; top: 13%; }
@@ -107,7 +106,14 @@
     .status-line { font-size: 12px; color: var(--muted); margin: 15px 0; }
     .profile-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 23px; }
     .account-panel { max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid var(--line); background: var(--white); }
-    .account-avatar { width: 88px; height: 88px; margin-bottom: 16px; border-radius: 50%; object-fit: cover; }
+    .account-avatar { width: 88px; height: 88px; margin-bottom: 16px; border-radius: 50%; object-fit: contain; background: #f0e5e9; }
+    .profile-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+    .inquiry-panel { max-width: 620px; margin: 0 auto; padding: 22px; border: 1px solid var(--line); background: var(--white); }
+    .inquiry-panel h3 { font-family: var(--serif); font-size: 24px; font-weight: 400; }
+    .inquiry-notice { min-height: 18px; color: var(--green-dark); font-size: 12px; }
+    .inquiry-item { padding: 14px 0; border-top: 1px solid var(--line); }
+    .inquiry-item p { margin: 7px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .inquiry-item small { color: var(--muted); font-size: 11px; }
     .admin-tools { margin-top: 40px; }
     .admin-tools > h3 { font-family: var(--serif); font-size: 26px; font-weight: 400; }
     .member-tools { margin-top: 38px; }
@@ -115,7 +121,7 @@
     .admin-help { color: var(--muted); font-size: 12px; line-height: 1.6; }
     .admin-notice { min-height: 18px; color: #9a3e34; font-size: 12px; }
     .member-notice { min-height: 18px; color: var(--green-dark); font-size: 12px; }
-    .profile-preview { display: block; width: 76px; height: 76px; border-radius: 50%; object-fit: cover; }
+    .profile-preview { display: block; width: 76px; height: 76px; border-radius: 50%; object-fit: contain; background: #f0e5e9; }
     .admin-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
     .admin-card { min-width: 0; padding: 18px; border: 1px solid var(--line); background: var(--white); }
     .admin-card h4 { margin: 0 0 15px; font-family: var(--serif); font-size: 20px; font-weight: 400; }
@@ -129,7 +135,7 @@
     .admin-item-copy small { margin-top: 4px; color: var(--muted); font-size: 11px; }
     .artwork-owner-copy { display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 10px; align-items: center; }
     .artwork-owner-copy small { grid-column: 2; }
-    .artwork-owner-image { grid-row: span 2; width: 52px; height: 52px; border-radius: 3px; object-fit: cover; }
+    .artwork-owner-image { grid-row: span 2; width: 52px; height: 52px; border-radius: 3px; object-fit: contain; background: #f0e5e9; }
     .admin-item-actions { display: flex; flex: 0 0 auto; gap: 5px; }
     .admin-item-actions .button { padding: 7px 9px; font-size: 11px; }
     .admin-empty { padding: 12px 0; color: var(--muted); font-size: 12px; }
@@ -219,9 +225,27 @@
           <h2 id="portfolioTitle" style="font-family:var(--serif);font-size:clamp(34px,4vw,48px);font-weight:400;letter-spacing:-.04em;margin:8px 0"></h2>
           <p id="portfolioBio" style="color:var(--muted);font-size:13px;margin:0"></p>
         </div>
-        <button class="button outline small" id="backHomeButton">← All artists</button>
       </div>
-      <div class="art-grid" id="portfolioGrid"></div>
+      <div class="profile-tabs" role="tablist" aria-label="Artist profile sections">
+        <button class="button small" type="button" id="portfolioTab" role="tab" aria-selected="true">Portfolio</button>
+        <button class="button outline small" type="button" id="inquiryTab" role="tab" aria-selected="false">Inquire</button>
+        <button class="button outline small" type="button" id="backHomeButton">← All artists</button>
+      </div>
+      <div class="art-grid" id="portfolioGrid" role="tabpanel"></div>
+      <section class="inquiry-panel hidden" id="inquiryPanel" role="tabpanel" aria-labelledby="inquiryTab">
+        <h3>Send an inquiry</h3>
+        <p class="admin-help" id="inquiryIntro"></p>
+        <form class="admin-form" id="inquiryForm">
+          <input id="inquiryArtistId" type="hidden">
+          <input id="inquiryRecipientId" type="hidden">
+          <label>Artwork<select id="inquiryArtwork"></select></label>
+          <label>Your name<input id="inquirySenderName" maxlength="100" required autocomplete="name"></label>
+          <label>Your email<input id="inquirySenderEmail" type="email" maxlength="254" required autocomplete="email"></label>
+          <label>Message<textarea id="inquiryMessage" maxlength="3000" required></textarea></label>
+          <button class="button" type="submit" id="inquirySubmit">Send inquiry</button>
+        </form>
+        <p class="inquiry-notice" id="inquiryNotice" role="status"></p>
+      </section>
     </section>
 
     <section class="section hidden" id="accountSection">
@@ -265,6 +289,12 @@
               </div>
             </form>
             <div id="memberArtworkList"></div>
+          </section>
+          <section class="admin-card">
+            <h4>Inquiries</h4>
+            <p class="admin-help">Messages from visitors to your profile appear here. Select a message's email address to reply.</p>
+            <button type="button" class="button outline small" id="refreshInquiries">Refresh inquiries</button>
+            <div id="memberInquiryList"></div>
           </section>
         </div>
       </div>

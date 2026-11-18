@@ -3,7 +3,7 @@ create table if not exists public.profiles (
   email text,
   display_name text not null default 'Family Artist',
   role text not null default 'artist',
-  profile_image text not null default 'default-profile.jfif',
+  profile_image text not null default '',
   created_at timestamptz not null default now()
 );
 
@@ -11,7 +11,14 @@ alter table public.profiles
   add column if not exists email text,
   add column if not exists display_name text not null default 'Family Artist',
   add column if not exists role text not null default 'artist',
-  add column if not exists profile_image text not null default 'default-profile.jfif';
+  add column if not exists profile_image text not null default '';
+
+alter table public.profiles
+  alter column profile_image set default '';
+
+update public.profiles
+set profile_image = ''
+where profile_image = 'default-profile.jfif';
 
 alter table public.profiles
   drop constraint if exists profiles_role_check;
@@ -25,7 +32,7 @@ create table if not exists public.devera_portfolio_artists (
   name text not null,
   medium text not null default 'Family artist',
   bio text not null default '',
-  profile_image text not null default 'default-profile.jfif',
+  profile_image text not null default '',
   profile_image_path text not null default '',
   created_at timestamptz not null default now()
 );
@@ -35,8 +42,16 @@ alter table public.devera_portfolio_artists
   add column if not exists name text not null default 'Family Artist',
   add column if not exists medium text not null default 'Family artist',
   add column if not exists bio text not null default '',
-  add column if not exists profile_image text not null default 'default-profile.jfif',
+  add column if not exists profile_image text not null default '',
   add column if not exists profile_image_path text not null default '';
+
+alter table public.devera_portfolio_artists
+  alter column profile_image set default '';
+
+update public.devera_portfolio_artists
+set profile_image = '', profile_image_path = ''
+where profile_image = 'default-profile.jfif'
+  and profile_image_path = '';
 
 create unique index if not exists devera_portfolio_artists_user_id_idx
   on public.devera_portfolio_artists (user_id);
@@ -61,6 +76,22 @@ create index if not exists devera_portfolio_artworks_artist_id_idx
   on public.devera_portfolio_artworks (artist_id);
 create index if not exists devera_portfolio_artworks_owner_id_idx
   on public.devera_portfolio_artworks (owner_id);
+
+create table if not exists public.devera_portfolio_inquiries (
+  id uuid primary key default gen_random_uuid(),
+  artist_id uuid not null references public.devera_portfolio_artists (id) on delete cascade,
+  recipient_id uuid not null references auth.users (id) on delete cascade,
+  artwork_id uuid references public.devera_portfolio_artworks (id) on delete set null,
+  artwork_title text not null default 'General inquiry',
+  sender_name text not null check (length(trim(sender_name)) between 1 and 100),
+  sender_email text not null check (length(trim(sender_email)) between 3 and 254),
+  message text not null check (length(trim(message)) between 1 and 3000),
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+
+create index if not exists devera_portfolio_inquiries_recipient_created_idx
+  on public.devera_portfolio_inquiries (recipient_id, created_at desc);
 
 create or replace function public.is_admin()
 returns boolean
@@ -115,7 +146,7 @@ declare
   initial_image text;
 begin
   initial_name := coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), 'Family Artist');
-  initial_image := coalesce(nullif(trim(new.raw_user_meta_data ->> 'profile_image'), ''), 'default-profile.jfif');
+  initial_image := coalesce(nullif(trim(new.raw_user_meta_data ->> 'profile_image'), ''), '');
 
   insert into public.profiles (id, email, display_name, profile_image)
   values (new.id, new.email, initial_name, initial_image)
@@ -139,7 +170,7 @@ select
   users.id,
   users.email,
   coalesce(nullif(trim(users.raw_user_meta_data ->> 'display_name'), ''), 'Family Artist'),
-  coalesce(nullif(trim(users.raw_user_meta_data ->> 'profile_image'), ''), 'default-profile.jfif')
+  coalesce(nullif(trim(users.raw_user_meta_data ->> 'profile_image'), ''), '')
 from auth.users as users
 on conflict (id) do update set email = excluded.email;
 
@@ -151,6 +182,7 @@ on conflict (user_id) do nothing;
 alter table public.profiles enable row level security;
 alter table public.devera_portfolio_artists enable row level security;
 alter table public.devera_portfolio_artworks enable row level security;
+alter table public.devera_portfolio_inquiries enable row level security;
 
 drop policy if exists "Profiles are publicly readable" on public.profiles;
 drop policy if exists "Artists can update their own profile" on public.profiles;
@@ -221,6 +253,36 @@ create policy "Users can delete own artworks"
   on public.devera_portfolio_artworks for delete to authenticated
   using (owner_id = (select auth.uid()));
 
+drop policy if exists "Visitors can send inquiries to profile owners" on public.devera_portfolio_inquiries;
+drop policy if exists "Users can read their own inquiries" on public.devera_portfolio_inquiries;
+drop policy if exists "Users can mark their own inquiries read" on public.devera_portfolio_inquiries;
+create policy "Visitors can send inquiries to profile owners"
+  on public.devera_portfolio_inquiries for insert to anon, authenticated
+  with check (
+    exists (
+      select 1
+      from public.devera_portfolio_artists as artist_profile
+      where artist_profile.id = devera_portfolio_inquiries.artist_id
+        and artist_profile.user_id = devera_portfolio_inquiries.recipient_id
+    )
+    and (
+      devera_portfolio_inquiries.artwork_id is null
+      or exists (
+        select 1
+        from public.devera_portfolio_artworks as artwork
+        where artwork.id = devera_portfolio_inquiries.artwork_id
+          and artwork.artist_id = devera_portfolio_inquiries.artist_id
+      )
+    )
+  );
+create policy "Users can read their own inquiries"
+  on public.devera_portfolio_inquiries for select to authenticated
+  using (recipient_id = (select auth.uid()));
+create policy "Users can mark their own inquiries read"
+  on public.devera_portfolio_inquiries for update to authenticated
+  using (recipient_id = (select auth.uid()))
+  with check (recipient_id = (select auth.uid()));
+
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
 grant update (role) on public.profiles to authenticated;
@@ -232,6 +294,11 @@ grant insert, update, delete on public.devera_portfolio_artists to authenticated
 revoke all on public.devera_portfolio_artworks from anon, authenticated;
 grant select on public.devera_portfolio_artworks to anon, authenticated;
 grant insert, update, delete on public.devera_portfolio_artworks to authenticated;
+
+revoke all on public.devera_portfolio_inquiries from anon, authenticated;
+grant insert on public.devera_portfolio_inquiries to anon, authenticated;
+grant select on public.devera_portfolio_inquiries to authenticated;
+grant update (read_at) on public.devera_portfolio_inquiries to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

@@ -1,29 +1,31 @@
 # De Vera's Art Portfolio
 
-The site has a public artist and artwork gallery, user accounts, and an admin dashboard. Users can edit their own public artist profile and upload, edit, or remove their artwork. New artworks appear in the public gallery immediately. Admins can manage gallery entries and user/admin roles. Account deletion and password resets are handled in Supabase.
+The site has a public artist and artwork gallery, user accounts, and an admin dashboard. Users can edit their own public artist profile and upload, edit, or remove their artwork. New artworks appear in the public gallery immediately and are shown without cropping. Visitors can send inquiries from an artist profile; messages go to that account's private in-app inbox. Admins can manage gallery entries and user/admin roles. Account deletion and password resets are handled in Supabase.
 
 ## 1. Set up Supabase
 
 1. In Supabase, open **Project Settings → API**.
 2. Confirm `supabase-config.js` has your **Project URL** and browser-safe **publishable/anon key**. Use the base project URL (for example, `https://your-project.supabase.co`), not a URL ending in `/rest/v1`. Never put a `service_role` key or password in the website.
-3. Open Supabase **SQL Editor**, paste the entire `supabase/setup.sql` file, and click **Run**. This creates the profile tables, the `devera-portfolio-images` storage bucket, and their access rules. The portfolio-specific table names avoid conflicts with older tables named `artists` or `artworks`. It also creates public artist profiles for existing accounts. If you already set up Supabase earlier, run this updated SQL again.
+3. Open Supabase **SQL Editor**, paste the entire `supabase/setup.sql` file, and click **Run**. This creates the profile, artwork, and inquiry tables, the `devera-portfolio-images` storage bucket, and their access rules. The portfolio-specific table names avoid conflicts with older tables named `artists` or `artworks`. It also creates public artist profiles for existing accounts. If you already set up Supabase earlier, run this updated SQL again.
 4. In **Authentication → Sign In / Providers**, enable email/password sign-in. Choose whether users must confirm their email.
 5. In **Authentication → URL Configuration**, set the Site URL to your deployed site. Add the local and preview origins you use to the redirect URL allowlist.
 
-Keep `default-profile.jfif` beside `index.html`; new accounts use it as their default profile picture.
+New accounts no longer use a default profile photo. Until a user uploads one, the gallery shows the first letter of their name.
 
 ## 2. Create user accounts
 
 1. Open the website and click **User login**.
 2. Choose **Create a user account**, enter a name, email, and password.
-3. If email confirmation is enabled, confirm the account using the email Supabase sends.
-4. Sign in with **User login**.
+3. If email confirmation is enabled, enter the 6-digit code Supabase emails in the **Verify your email** form. Use **Resend verification code** if needed.
+4. After verification, the site signs you in. If the confirmation email contains a link instead, click that link and return to the site.
 
 There is no pre-created account or default password.
 
-After signing in, use **Your profile and artwork** to set your public name, specialty, bio, and profile photo. The artist profile appears on the main gallery. Your email address is not public. Upload artwork photos from the same page; new artworks appear publicly as soon as they are saved. You can edit or delete your own artworks.
+After signing in, use **Your profile and artwork** to set your public name, specialty, bio, and profile photo. The uploaded photo is used for that user's public profile on the main gallery. Your email address is not public. Upload artwork photos from the same page; new artworks appear publicly as soon as they are saved. You can edit or delete your own artworks.
 
 Uploads accept JPEG, PNG, or WebP images up to 5 MB.
+
+Visitors can open an artist profile's **Inquire** tab, choose an artwork or general inquiry, and send a message. The artist sees it under **Inquiries** on their account page and can reply using the sender's email address.
 
 ## 3. Set up the first admin
 
@@ -56,4 +58,4 @@ Admin-created gallery entries can use a relative image path (such as `images/por
 
 For local testing, serve the folder over HTTP (for example, run `py -m http.server 8000` from this folder and open `http://localhost:8000`). Add that local origin to the Supabase Auth URL allowlist if using email confirmation.
 
-For deployment, upload the project contents—including `index.html`, `app.js`, `supabase-config.js`, `default-profile.jfif`, and `supabase/setup.sql`—to your static host. On Vercel, use the folder containing `index.html` as the root, choose the **Other** preset, leave the build command empty, and deploy.
+For deployment, upload the project contents—including `index.html`, `app.js`, `supabase-config.js`, and `supabase/setup.sql`—to your static host. On Vercel, use the folder containing `index.html` as the root, choose the **Other** preset, leave the build command empty, and deploy.

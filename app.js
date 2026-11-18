@@ -14,6 +14,7 @@
   const palette = ["#9f775e", "#829078", "#9d8caf", "#c18a68", "#718995", "#b08e50"];
   let supabaseClient = null;
   let currentUser = null;
+  let activePortfolioArtist = null;
   let activeArtistIndex = 0;
   let authMode = "user";
   let pendingVerificationEmail = "";
@@ -165,14 +166,35 @@
   function openPortfolio(artistId) {
     const artist = artists.find(item => item.id === artistId);
     if (!artist) return;
+    activePortfolioArtist = artist;
     $("portfolioTitle").textContent = artist.name;
     $("portfolioBio").textContent = [artist.medium, artist.bio].filter(Boolean).join(" · ") || "A member of the De Vera family.";
     const works = artworks.filter(item => item.artistId === artistId);
     $("portfolioGrid").innerHTML = works.length
       ? works.map(item => renderArtwork(item, artist)).join("")
       : `<div class="empty"><strong>Portfolio in progress</strong>This artist's work will appear here.</div>`;
+    $("inquiryArtistId").value = artist.id;
+    $("inquiryRecipientId").value = artist.user_id || "";
+    $("inquiryArtwork").innerHTML = `<option value="">General inquiry</option>${works.map(item =>
+      `<option value="${escapeHTML(item.id)}">${escapeHTML(item.title)}</option>`).join("")}`;
+    $("inquiryTab").classList.toggle("hidden", !artist.user_id);
+    $("inquiryIntro").textContent = artist.user_id
+      ? `Your message will go to ${artist.name}'s account inbox.`
+      : "This profile does not have an account inbox for inquiries.";
+    $("inquiryNotice").textContent = "";
+    setPortfolioTab("portfolio");
     showSection("portfolio");
     $("portfolioSection").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function setPortfolioTab(tab) {
+    const showInquiry = tab === "inquiry";
+    $("portfolioGrid").classList.toggle("hidden", showInquiry);
+    $("inquiryPanel").classList.toggle("hidden", !showInquiry);
+    $("portfolioTab").classList.toggle("outline", showInquiry);
+    $("inquiryTab").classList.toggle("outline", !showInquiry);
+    $("portfolioTab").setAttribute("aria-selected", String(!showInquiry));
+    $("inquiryTab").setAttribute("aria-selected", String(showInquiry));
   }
 
   function renderAdminLists() {
@@ -252,6 +274,78 @@
     if (!path) return;
     const { error } = await supabaseClient.storage.from(imageBucket).remove([path]);
     if (error) throw error;
+  }
+
+  async function submitInquiry(event) {
+    event.preventDefault();
+    const artist = activePortfolioArtist;
+    if (!artist || !artist.user_id) {
+      $("inquiryNotice").textContent = "This profile cannot receive inquiries.";
+      return;
+    }
+    const artworkId = $("inquiryArtwork").value || null;
+    const selectedArtwork = artworks.find(item => item.id === artworkId);
+    $("inquirySubmit").disabled = true;
+    $("inquiryNotice").textContent = "";
+    try {
+      const { error } = await supabaseClient.from("devera_portfolio_inquiries").insert({
+        artist_id: artist.id,
+        recipient_id: artist.user_id,
+        artwork_id: artworkId,
+        artwork_title: selectedArtwork ? selectedArtwork.title : "General inquiry",
+        sender_name: $("inquirySenderName").value.trim(),
+        sender_email: $("inquirySenderEmail").value.trim(),
+        message: $("inquiryMessage").value.trim()
+      });
+      if (error) throw error;
+      $("inquiryForm").reset();
+      $("inquiryNotice").textContent = `Your inquiry was sent to ${artist.name}'s account inbox.`;
+    } catch (error) {
+      console.error(error);
+      $("inquiryNotice").textContent = error.message || "Could not send your inquiry.";
+    } finally {
+      $("inquirySubmit").disabled = false;
+    }
+  }
+
+  function renderMemberInquiries(inquiries) {
+    $("memberInquiryList").innerHTML = inquiries.length ? inquiries.map(inquiry => {
+      const emailLink = `mailto:${encodeURIComponent(inquiry.sender_email)}`;
+      const timestamp = new Date(inquiry.created_at);
+      const receivedAt = Number.isNaN(timestamp.getTime()) ? "" : timestamp.toLocaleString();
+      return `<article class="inquiry-item">
+        <strong>${escapeHTML(inquiry.sender_name)}</strong> · <a href="${emailLink}">${escapeHTML(inquiry.sender_email)}</a>
+        <small>${escapeHTML(inquiry.artwork_title || "General inquiry")} · ${escapeHTML(receivedAt)}</small>
+        <p>${escapeHTML(inquiry.message)}</p>
+        ${inquiry.read_at ? `<small>Read</small>` : `<button type="button" class="button outline small" data-mark-inquiry="${escapeHTML(inquiry.id)}">Mark as read</button>`}
+      </article>`;
+    }).join("") : `<p class="admin-empty">You have no inquiries yet.</p>`;
+  }
+
+  async function loadMemberInquiries() {
+    const { data, error } = await supabaseClient.from("devera_portfolio_inquiries")
+      .select("id,artist_id,artwork_id,artwork_title,sender_name,sender_email,message,created_at,read_at")
+      .eq("recipient_id", currentUser.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    renderMemberInquiries(data);
+  }
+
+  async function handleInquiryAction(event) {
+    const button = event.target.closest("[data-mark-inquiry]");
+    if (!button || !currentUser) return;
+    button.disabled = true;
+    try {
+      const { error } = await supabaseClient.from("devera_portfolio_inquiries")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", button.dataset.markInquiry)
+        .eq("recipient_id", currentUser.id);
+      if (error) throw error;
+      await loadMemberInquiries();
+    } catch (error) {
+      console.error(error);
+      setMemberNotice(error.message || "Could not update this inquiry.");
+    }
   }
 
   async function loadAdminUsers() {
@@ -683,6 +777,7 @@
     setMemberNotice("");
     showSection("account");
     await loadMemberArtworks();
+    await loadMemberInquiries();
     if (currentUser.role === "admin") {
       try {
         await loadAdminData();
@@ -874,6 +969,16 @@
     showSection("home");
   });
   $("backHomeButton").addEventListener("click", () => showSection("home"));
+  $("portfolioTab").addEventListener("click", () => setPortfolioTab("portfolio"));
+  $("inquiryTab").addEventListener("click", () => setPortfolioTab("inquiry"));
+  $("inquiryForm").addEventListener("submit", submitInquiry);
+  $("memberInquiryList").addEventListener("click", handleInquiryAction);
+  $("refreshInquiries").addEventListener("click", () => {
+    loadMemberInquiries().catch(error => {
+      console.error(error);
+      setMemberNotice(error.message || "Could not load your inquiries.");
+    });
+  });
   $("previousArtist").addEventListener("click", () => moveArtist(-1));
   $("nextArtist").addEventListener("click", () => moveArtist(1));
   $("artistGrid").addEventListener("scroll", updateArtistPosition, { passive: true });
