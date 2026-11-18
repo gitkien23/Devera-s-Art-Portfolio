@@ -40,7 +40,6 @@
     .button.outline:hover { background: #e8eee8; }
     .button.small { padding: 9px 13px; }
     .button.dark { background: var(--ink); border-color: var(--ink); }
-    .account-label { max-width: 115px; display: inline-block; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .eyebrow { color: var(--green); font-size: 11px; letter-spacing: .17em; text-transform: uppercase; font-weight: 700; }
     h1, h2, h3, p { margin-top: 0; }
@@ -105,43 +104,21 @@
 
     .footer { padding: 25px 0 35px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 15px; color: var(--muted); font-size: 11px; }
     .hidden { display: none !important; }
-    .toolbar { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-    .profile-panel { border: 1px solid var(--line); background: var(--white); padding: 20px; max-width: 620px; margin: 0 auto 30px; }
-    .profile-panel h3 { font-family: var(--serif); font-size: 23px; font-weight: 400; margin-bottom: 16px; }
-    .danger-zone { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 24px; padding-top: 19px; border-top: 1px solid var(--line); }
-    .danger-zone strong { display: block; font-size: 13px; color: #983d4d; }
-    .danger-zone p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
-    .button.danger { flex-shrink: 0; border-color: #b94e5d; background: #fff7f8; color: #983d4d; }
-    .button.danger:hover { background: #f9e3e8; }
-    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .profile-photo-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .profile-photo-preview { width: 74px; height: 74px; border-radius: 50%; object-fit: cover; background: #e4e6dc; }
-    .profile-photo-preview.hidden { display: none; }
-    .profile-photo-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-    .field.full { grid-column: 1 / -1; }
-    .field label { font-size: 11px; color: var(--muted); }
-    .field input, .field textarea, .field select { border: 1px solid var(--line); background: #fff; padding: 10px 11px; border-radius: 2px; color: var(--ink); outline: none; }
-    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--green); }
-    .field textarea { min-height: 95px; resize: vertical; }
-    .form-actions { display: flex; justify-content: end; gap: 9px; }
-
-    .modal-backdrop { position: fixed; inset: 0; background: #1016129c; display: grid; place-items: center; padding: 20px; z-index: 20; }
-    .modal { width: min(440px, 100%); background: var(--paper); padding: 29px; box-shadow: 0 24px 80px #0004; position: relative; max-height: 94vh; overflow-y: auto; }
-    .modal h2 { font-family: var(--serif); font-weight: 400; font-size: 32px; margin: 9px 0 7px; }
-    .modal-intro { color: var(--muted); font-size: 12px; margin-bottom: 21px; line-height: 1.55; }
-    .close { position: absolute; top: 13px; right: 15px; border: 0; background: none; font-size: 24px; color: var(--muted); }
-    .modal-switch { font-size: 12px; color: var(--muted); text-align: center; margin: 17px 0 0; }
-    .modal-switch button { background: none; border: 0; color: var(--green); text-decoration: underline; }
-    .error { color: #9a3e34; font-size: 12px; min-height: 16px; margin: 8px 0; }
-    .upload-modal { width: min(560px, 100%); }
-    .review-actions { display: flex; gap: 7px; }
-    .review-actions .button { padding: 7px 10px; font-size: 11px; }
-    .button.reject { border-color: #b95b50; background: transparent; color: #9a3e34; }
-    .button.reject:hover { background: #f9e3df; }
-    .status-line { font-size: 12px; color: var(--muted); margin-top: 15px; }
-    .preview { width: 100%; max-height: 180px; object-fit: cover; margin-bottom: 10px; display: none; }
+    .status-line { font-size: 12px; color: var(--muted); margin: 15px 0; }
     .profile-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 23px; }
+    .account-panel { max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid var(--line); background: var(--white); }
+    .account-avatar { width: 88px; height: 88px; margin-bottom: 16px; border-radius: 50%; object-fit: cover; }
+    .auth-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: #1016129c; }
+    .auth-modal { position: relative; width: min(440px, 100%); max-height: 94vh; overflow-y: auto; padding: 29px; background: var(--paper); box-shadow: 0 24px 80px #0004; }
+    .auth-modal h2 { font-family: var(--serif); font-weight: 400; font-size: 32px; margin: 9px 0 7px; }
+    .auth-modal .close { position: absolute; top: 13px; right: 15px; border: 0; background: none; font-size: 24px; color: var(--muted); }
+    .auth-intro { color: var(--muted); font-size: 12px; margin-bottom: 21px; line-height: 1.55; }
+    .auth-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .auth-field label { font-size: 11px; color: var(--muted); }
+    .auth-field input { border: 1px solid var(--line); background: #fff; padding: 10px 11px; border-radius: 2px; color: var(--ink); outline: none; }
+    .auth-field input:focus { border-color: var(--green); }
+    .auth-error { min-height: 16px; margin: 8px 0; color: #9a3e34; font-size: 12px; }
+    .auth-switch { display: block; margin: 17px auto 0; border: 0; background: none; color: var(--green); font-size: 12px; text-decoration: underline; }
 
     @media (max-width: 850px) {
       .shell { padding: 0 4%; }
@@ -155,7 +132,6 @@
       .topbar { height: 70px; }
       .nav a { display: none; }
       .nav { gap: 11px; }
-      .nav .button { padding: 9px 11px; }
       .section { padding: 43px 0 49px; }
       .home-gallery { min-height: calc(100vh - 125px); padding-top: 29px; }
       .section-heading { align-items: start; flex-direction: column; gap: 11px; }
@@ -171,8 +147,6 @@
       .art-grid { grid-template-columns: 1fr; gap: 13px; }
       .art-image { height: 240px; }
       .footer { flex-direction: column; }
-      .profile-grid { grid-template-columns: 1fr; }
-      .field.full { grid-column: auto; }
     }
     @media (prefers-reduced-motion: reduce) {
       .artist-card { transition: none; }
@@ -190,9 +164,10 @@
     </a>
     <nav class="nav" aria-label="Main navigation">
       <a href="#homeView" id="artistsLink">Artists</a>
-      <button id="manageLink" class="hidden">My studio</button>
-      <button id="adminLink" class="hidden">Review posts</button>
-      <button class="button small" id="loginButton">login/sign-up</button>
+      <button type="button" id="userLoginButton">User login</button>
+      <button type="button" id="adminLoginButton">Admin login</button>
+      <span class="hidden" id="accountName"></span>
+      <button type="button" class="button small hidden" id="logoutButton">Sign out</button>
     </nav>
   </header>
 
@@ -223,53 +198,15 @@
       <div class="art-grid" id="portfolioGrid"></div>
     </section>
 
-    <section class="section hidden" id="studioSection">
+    <section class="section hidden" id="accountSection">
       <div class="section-heading">
-        <div><div class="eyebrow">Your creative space</div><h2>My studio</h2></div>
-        <div class="toolbar">
-          <button class="button outline small" id="editProfileButton">Edit profile</button>
-          <button class="button small" id="uploadButton">+ Submit artwork</button>
-        </div>
+        <div><div class="eyebrow" id="accountEyebrow"></div><h2 id="accountTitle"></h2></div>
+        <p id="accountMessage"></p>
       </div>
-      <div class="profile-panel hidden" id="profilePanel">
-        <h3>Edit your artist profile</h3>
-        <form id="profileForm">
-          <div class="profile-grid">
-            <div class="field"><label for="profileName">Display name</label><input id="profileName" required maxlength="50"></div>
-            <div class="field"><label for="profileMedium">Art form / medium</label><input id="profileMedium" maxlength="60" placeholder="e.g. Painting, illustration"></div>
-            <div class="field full"><label for="profileBio">About you</label><textarea id="profileBio" maxlength="280" placeholder="A few words about your art..."></textarea></div>
-            <div class="field full">
-              <label for="profilePhotoInput">Profile picture (JPEG, PNG, GIF or WebP; up to 2 MB)</label>
-              <div class="profile-photo-tools">
-                <img id="profilePhotoPreview" class="profile-photo-preview hidden" alt="Profile picture preview">
-                <div class="profile-photo-actions">
-                  <input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp">
-                  <button type="button" class="text-button hidden" id="removeProfilePhoto">Remove picture</button>
-                </div>
-              </div>
-              <div class="error" id="profilePhotoError" role="alert"></div>
-            </div>
-          </div>
-          <div class="form-actions"><button type="button" class="button outline small" id="cancelProfile">Cancel</button><button class="button small">Save profile</button></div>
-        </form>
-        <div class="danger-zone">
-          <div><strong>Delete your account</strong><p>Your profile and all your artwork will be permanently removed.</p></div>
-          <button type="button" class="button danger small" id="deleteAccountButton">Delete account</button>
-        </div>
+      <div class="account-panel">
+        <img id="accountAvatar" class="account-avatar" src="default-profile.jfif" alt="Profile picture">
+        <p id="accountDetails" class="status-line"></p>
       </div>
-      <div class="section-heading" style="margin-top:33px;margin-bottom:17px">
-        <div><h2 style="font-size:30px">Your submissions</h2></div>
-        <p>New and edited artwork is reviewed before it appears publicly.</p>
-      </div>
-      <div class="art-grid" id="studioGrid"></div>
-    </section>
-
-    <section class="section hidden" id="adminSection">
-      <div class="section-heading">
-        <div><div class="eyebrow">Curating the family gallery</div><h2>Post review</h2></div>
-        <p>Approve a submission to publish it in the artist's portfolio.</p>
-      </div>
-      <div class="art-grid" id="adminGrid"></div>
     </section>
 
   </main>
@@ -278,38 +215,20 @@
     <span>Celebrating the things we make, and the people we make them with.</span>
   </footer>
 
-  <div class="modal-backdrop hidden" id="authBackdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <div class="modal">
-      <button class="close" type="button" data-close="authBackdrop" aria-label="Close">×</button>
-      <div class="eyebrow">A place for every artist</div>
-      <h2 id="authTitle">Welcome back</h2>
-      <p class="modal-intro" id="authIntro">Sign in to manage your artist profile and artwork.</p>
+  <div class="auth-backdrop hidden" id="authBackdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-modal">
+      <button class="close" type="button" id="closeAuth" aria-label="Close">×</button>
+      <div class="eyebrow">De Vera family gallery</div>
+      <h2 id="authTitle">User login</h2>
+      <p class="auth-intro" id="authIntro"></p>
       <form id="authForm">
-        <div class="field hidden" id="nameField"><label for="authName">Your name</label><input id="authName" maxlength="50" autocomplete="name"></div>
-        <div class="field"><label for="authEmail">Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
-        <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
-        <div class="error" id="authError" role="alert"></div>
-        <button class="button" id="authSubmit" style="width:100%">Sign in</button>
+        <div class="auth-field hidden" id="nameField"><label for="authName">Your name</label><input id="authName" value="Family Artist" maxlength="50" autocomplete="name"></div>
+        <div class="auth-field"><label for="authEmail">Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
+        <div class="auth-field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
+        <div class="auth-error" id="authError" role="alert"></div>
+        <button class="button" id="authSubmit" type="submit" style="width:100%">Sign in</button>
       </form>
-      <p class="modal-intro" id="demoAccounts" style="margin:15px 0 0">Accounts are securely managed by the connected Supabase project.</p>
-      <p class="modal-switch"><span id="switchPrompt">New to the family gallery?</span> <button type="button" id="switchAuth">Create an account</button></p>
-    </div>
-  </div>
-
-  <div class="modal-backdrop hidden" id="uploadBackdrop" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
-    <div class="modal upload-modal">
-      <button class="close" type="button" data-close="uploadBackdrop" aria-label="Close">×</button>
-      <div class="eyebrow">Add to your portfolio</div>
-      <h2 id="uploadTitle">Submit artwork</h2>
-      <p class="modal-intro">Your submission will be visible to the family admin for review before it is published.</p>
-      <form id="uploadForm">
-        <div class="field"><label for="artTitle">Artwork title</label><input id="artTitle" required maxlength="80"></div>
-        <div class="field"><label for="artDescription">Description</label><textarea id="artDescription" maxlength="240" placeholder="Tell us a little about this piece"></textarea></div>
-        <div class="field"><label for="artMedium">Medium</label><input id="artMedium" maxlength="50" placeholder="e.g. Watercolor on paper"></div>
-        <div class="field"><label for="artImage">Image (optional: JPEG, PNG, GIF or WebP; up to 2 MB)</label><input id="artImage" type="file" accept="image/jpeg,image/png,image/gif,image/webp"><img class="preview" id="imagePreview" alt="Artwork preview"></div>
-        <div class="error" id="uploadError" role="alert"></div>
-        <div class="form-actions"><button type="button" class="button outline small" data-close="uploadBackdrop">Cancel</button><button class="button small" id="uploadSubmit">Submit for review</button></div>
-      </form>
+      <button type="button" class="auth-switch" id="authSwitch">Create a user account</button>
     </div>
   </div>
 
