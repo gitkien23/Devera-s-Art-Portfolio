@@ -1,12 +1,12 @@
 # De Vera's Art Portfolio
 
-The site has a public artist and artwork gallery, user accounts, and an admin dashboard. Admins can add, edit, and delete gallery entries and change accounts between user and admin roles. Account deletion and password resets are handled in Supabase.
+The site has a public artist and artwork gallery, user accounts, and an admin dashboard. Users can edit their own public artist profile and upload, edit, or remove their artwork. New artworks appear in the public gallery immediately. Admins can manage gallery entries and user/admin roles. Account deletion and password resets are handled in Supabase.
 
 ## 1. Set up Supabase
 
 1. In Supabase, open **Project Settings → API**.
 2. Confirm `supabase-config.js` has your **Project URL** and browser-safe **publishable/anon key**. Use the base project URL (for example, `https://your-project.supabase.co`), not a URL ending in `/rest/v1`. Never put a `service_role` key or password in the website.
-3. Open Supabase **SQL Editor**, paste the entire `supabase/setup.sql` file, and click **Run**. This creates the profiles table plus `devera_portfolio_artists` and `devera_portfolio_artworks`, with their access rules. The portfolio-specific table names avoid conflicts with older tables named `artists` or `artworks`. It also creates profiles for existing accounts. If you already set up Supabase earlier, run this updated SQL again to add the admin tools.
+3. Open Supabase **SQL Editor**, paste the entire `supabase/setup.sql` file, and click **Run**. This creates the profile tables, the `devera-portfolio-images` storage bucket, and their access rules. The portfolio-specific table names avoid conflicts with older tables named `artists` or `artworks`. It also creates public artist profiles for existing accounts. If you already set up Supabase earlier, run this updated SQL again.
 4. In **Authentication → Sign In / Providers**, enable email/password sign-in. Choose whether users must confirm their email.
 5. In **Authentication → URL Configuration**, set the Site URL to your deployed site. Add the local and preview origins you use to the redirect URL allowlist.
 
@@ -20,6 +20,10 @@ Keep `default-profile.jfif` beside `index.html`; new accounts use it as their de
 4. Sign in with **User login**.
 
 There is no pre-created account or default password.
+
+After signing in, use **Your profile and artwork** to set your public name, specialty, bio, and profile photo. The artist profile appears on the main gallery. Your email address is not public. Upload artwork photos from the same page; new artworks appear publicly as soon as they are saved. You can edit or delete your own artworks.
+
+Uploads accept JPEG, PNG, or WebP images up to 5 MB.
 
 ## 3. Set up the first admin
 
@@ -42,11 +46,11 @@ Once an admin is set up, the admin dashboard can change other accounts between u
 
 ## 4. Use the admin dashboard
 
-- **Artist profiles:** add, edit, or delete an artist's name, medium, bio, and profile image path.
-- **Artworks:** add, edit, or delete an artwork, choose its artist, and enter its title, medium, description, and image path.
+- **Artist profiles:** add, edit, or delete artist profiles.
+- **Artworks:** add, edit, or delete gallery entries.
 - **User accounts:** view registered account names and emails, and change their user/admin role. The currently signed-in admin cannot change their own role from the dashboard.
 
-For gallery images, add the image file to the website folder and enter its relative path (such as `images/portrait.jpg`), or enter an HTTPS image address. The dashboard does not upload image files.
+Admin-created gallery entries can use a relative image path (such as `images/portrait.jpg`) or an HTTPS image address. Users upload their own profile and artwork photos from their account page.
 
 ## 5. Run locally or deploy
 

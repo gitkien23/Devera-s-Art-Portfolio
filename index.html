@@ -110,8 +110,12 @@
     .account-avatar { width: 88px; height: 88px; margin-bottom: 16px; border-radius: 50%; object-fit: cover; }
     .admin-tools { margin-top: 40px; }
     .admin-tools > h3 { font-family: var(--serif); font-size: 26px; font-weight: 400; }
+    .member-tools { margin-top: 38px; }
+    .member-tools > h3 { font-family: var(--serif); font-size: 26px; font-weight: 400; }
     .admin-help { color: var(--muted); font-size: 12px; line-height: 1.6; }
     .admin-notice { min-height: 18px; color: #9a3e34; font-size: 12px; }
+    .member-notice { min-height: 18px; color: var(--green-dark); font-size: 12px; }
+    .profile-preview { display: block; width: 76px; height: 76px; border-radius: 50%; object-fit: cover; }
     .admin-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
     .admin-card { min-width: 0; padding: 18px; border: 1px solid var(--line); background: var(--white); }
     .admin-card h4 { margin: 0 0 15px; font-family: var(--serif); font-size: 20px; font-weight: 400; }
@@ -123,6 +127,9 @@
     .admin-item-copy { min-width: 0; overflow-wrap: anywhere; }
     .admin-item-copy strong, .admin-item-copy small { display: block; }
     .admin-item-copy small { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .artwork-owner-copy { display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 10px; align-items: center; }
+    .artwork-owner-copy small { grid-column: 2; }
+    .artwork-owner-image { grid-row: span 2; width: 52px; height: 52px; border-radius: 3px; object-fit: cover; }
     .admin-item-actions { display: flex; flex: 0 0 auto; gap: 5px; }
     .admin-item-actions .button { padding: 7px 9px; font-size: 11px; }
     .admin-empty { padding: 12px 0; color: var(--muted); font-size: 12px; }
@@ -225,6 +232,41 @@
       <div class="account-panel">
         <img id="accountAvatar" class="account-avatar" src="default-profile.jfif" alt="Profile picture">
         <p id="accountDetails" class="status-line"></p>
+      </div>
+      <div class="member-tools" id="memberTools">
+        <h3>Your profile and artwork</h3>
+        <p class="admin-help">Your name, bio, and profile photo are public on the gallery. Your email stays private.</p>
+        <p class="member-notice" id="memberNotice" role="status"></p>
+        <div class="admin-columns">
+          <section class="admin-card">
+            <h4>Edit your public profile</h4>
+            <form class="admin-form" id="memberProfileForm">
+              <label>Display name<input id="memberProfileName" maxlength="100" required></label>
+              <label>Medium or specialty<input id="memberProfileMedium" maxlength="100" placeholder="e.g. Painting"></label>
+              <label>Bio<textarea id="memberProfileBio" maxlength="1000"></textarea></label>
+              <label>Profile photo<input id="memberProfilePhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
+              <img id="memberProfilePreview" class="profile-preview" src="default-profile.jfif" alt="Profile photo preview">
+              <p class="admin-help">JPEG, PNG, or WebP; maximum 5 MB.</p>
+              <button class="button" type="submit" id="memberProfileSave">Save profile</button>
+            </form>
+          </section>
+          <section class="admin-card">
+            <h4>Upload your artwork</h4>
+            <form class="admin-form" id="memberArtworkForm">
+              <input id="memberArtworkId" type="hidden">
+              <label>Artwork title<input id="memberArtworkTitle" maxlength="150" required></label>
+              <label>Medium<input id="memberArtworkMedium" maxlength="100" placeholder="e.g. Watercolor"></label>
+              <label>Description<textarea id="memberArtworkDescription" maxlength="1000"></textarea></label>
+              <label>Photo<input id="memberArtworkPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
+              <p class="admin-help">JPEG, PNG, or WebP; maximum 5 MB. A photo is required for a new artwork.</p>
+              <div class="admin-item-actions">
+                <button class="button" type="submit" id="memberArtworkSave">Save artwork</button>
+                <button class="button outline hidden" type="button" id="memberArtworkCancel">Cancel edit</button>
+              </div>
+            </form>
+            <div id="memberArtworkList"></div>
+          </section>
+        </div>
       </div>
       <div class="admin-tools hidden" id="adminTools">
         <h3>Admin tools</h3>
