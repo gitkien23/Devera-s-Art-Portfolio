@@ -16,6 +16,7 @@
   let currentUser = null;
   let activeArtistIndex = 0;
   let authMode = "user";
+  let pendingVerificationEmail = "";
   let profilePreviewUrl = "";
 
   const $ = id => document.getElementById(id);
@@ -29,6 +30,16 @@
 
   function setMemberNotice(message) {
     $("memberNotice").textContent = message || "";
+  }
+
+  function setProfileImage(element, source) {
+    if (source) {
+      element.src = source;
+      element.classList.remove("hidden");
+    } else {
+      element.removeAttribute("src");
+      element.classList.add("hidden");
+    }
   }
 
   function setNotice(message) {
@@ -463,13 +474,13 @@
       currentUser.profileImage = data.profile_image;
       currentUser.profileImagePath = data.profile_image_path;
       $("accountDetails").textContent = `${currentUser.name} · ${currentUser.email}`;
-      $("accountAvatar").src = currentUser.profileImage || "default-profile.jfif";
+      setProfileImage($("accountAvatar"), currentUser.profileImage);
       $("accountAvatar").alt = `${currentUser.name}'s profile picture`;
       updateAuthControls();
       $("memberProfilePhoto").value = "";
       if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
       profilePreviewUrl = "";
-      $("memberProfilePreview").src = currentUser.profileImage || "default-profile.jfif";
+      setProfileImage($("memberProfilePreview"), currentUser.profileImage);
       let warning = "";
       if (uploadedImage && oldImagePath) {
         try {
@@ -635,7 +646,7 @@
         .insert({
           user_id: authUser.id,
           name: data.display_name || authUser.email || "Family Artist",
-          profile_image: data.profile_image || "default-profile.jfif"
+          profile_image: data.profile_image || ""
         })
         .select("id,user_id,name,medium,bio,profile_image,profile_image_path")
         .single();
@@ -659,12 +670,12 @@
       ? "You are signed in with administrator access."
       : "You are signed in with a user account.";
     $("accountDetails").textContent = `${currentUser.name} · ${currentUser.email}`;
-    $("accountAvatar").src = currentUser.profileImage || "default-profile.jfif";
+    setProfileImage($("accountAvatar"), currentUser.profileImage);
     $("accountAvatar").alt = `${currentUser.name}'s profile picture`;
     $("memberProfileName").value = currentUser.name;
     $("memberProfileMedium").value = currentUser.medium || "";
     $("memberProfileBio").value = currentUser.bio || "";
-    $("memberProfilePreview").src = currentUser.profileImage || "default-profile.jfif";
+    setProfileImage($("memberProfilePreview"), currentUser.profileImage);
     $("memberTools").classList.remove("hidden");
     $("adminTools").classList.toggle("hidden", currentUser.role !== "admin");
     updateAuthControls();
@@ -684,6 +695,7 @@
 
   function openAuth(mode) {
     authMode = mode;
+    pendingVerificationEmail = "";
     const isSignup = mode === "signup";
     const isAdmin = mode === "admin";
     $("authTitle").textContent = isSignup ? "Create user account" : isAdmin ? "Admin login" : "User login";
@@ -694,6 +706,12 @@
         : "Sign in with your user account.";
     $("nameField").classList.toggle("hidden", !isSignup);
     $("authName").required = isSignup;
+    $("passwordField").classList.remove("hidden");
+    $("authPassword").required = true;
+    $("verificationField").classList.add("hidden");
+    $("authVerificationCode").required = false;
+    $("verifyResend").classList.add("hidden");
+    $("authEmail").readOnly = false;
     $("authPassword").autocomplete = isSignup ? "new-password" : "current-password";
     $("authSubmit").textContent = isSignup ? "Create account" : "Sign in";
     $("authSwitch").classList.toggle("hidden", isAdmin);
@@ -703,6 +721,28 @@
     $("authForm").reset();
     $("authBackdrop").classList.remove("hidden");
     $("authEmail").focus();
+  }
+
+  function showVerificationPrompt(email) {
+    authMode = "verify";
+    pendingVerificationEmail = email;
+    $("authTitle").textContent = "Verify your email";
+    $("authIntro").textContent = `Enter the 6-digit code sent to ${email}.`;
+    $("nameField").classList.add("hidden");
+    $("authName").required = false;
+    $("passwordField").classList.add("hidden");
+    $("authPassword").required = false;
+    $("authPassword").value = "";
+    $("authEmail").value = email;
+    $("authEmail").readOnly = true;
+    $("verificationField").classList.remove("hidden");
+    $("authVerificationCode").required = true;
+    $("authVerificationCode").value = "";
+    $("authSubmit").textContent = "Verify email";
+    $("authSwitch").classList.add("hidden");
+    $("verifyResend").classList.remove("hidden");
+    $("authError").textContent = "Check your inbox, then enter the code here.";
+    $("authVerificationCode").focus();
   }
 
   function closeAuth() {
@@ -717,17 +757,28 @@
     const email = $("authEmail").value.trim().toLowerCase();
     const password = $("authPassword").value;
     try {
-      if (authMode === "signup") {
+      if (authMode === "verify") {
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+          email: pendingVerificationEmail,
+          token: $("authVerificationCode").value.trim(),
+          type: "signup"
+        });
+        if (error) throw error;
+        if (!data.user) throw new Error("Email verification did not return an account. Try signing in again.");
+        await loadAccount(data.user);
+        closeAuth();
+        return;
+      } else if (authMode === "signup") {
         const name = $("authName").value.trim();
         if (!name) throw new Error("Please enter your name.");
         const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
-          options: { data: { display_name: name, profile_image: "default-profile.jfif" } }
+          options: { data: { display_name: name } }
         });
         if (error) throw error;
         if (!data.session) {
-          $("authError").textContent = "Check your email to confirm your account, then sign in.";
+          showVerificationPrompt(email);
           return;
         }
         await loadAccount(data.user);
@@ -754,6 +805,25 @@
       $("authError").textContent = error.message || "Sign-in failed. Please try again.";
     } finally {
       $("authSubmit").disabled = !configured;
+    }
+  }
+
+  async function resendVerificationCode() {
+    if (!pendingVerificationEmail || !supabaseClient) return;
+    $("verifyResend").disabled = true;
+    $("authError").textContent = "";
+    try {
+      const { error } = await supabaseClient.auth.resend({
+        type: "signup",
+        email: pendingVerificationEmail
+      });
+      if (error) throw error;
+      $("authError").textContent = "A new verification email was sent.";
+    } catch (error) {
+      console.error(error);
+      $("authError").textContent = error.message || "Could not resend the verification code.";
+    } finally {
+      $("verifyResend").disabled = false;
     }
   }
 
@@ -812,6 +882,7 @@
   $("logoutButton").addEventListener("click", signOut);
   $("authSwitch").addEventListener("click", () => openAuth(authMode === "signup" ? "user" : "signup"));
   $("authForm").addEventListener("submit", submitAuth);
+  $("verifyResend").addEventListener("click", resendVerificationCode);
   $("memberProfileForm").addEventListener("submit", saveMemberProfile);
   $("memberArtworkForm").addEventListener("submit", saveMemberArtwork);
   $("memberTools").addEventListener("click", event => { handleMemberAction(event); });
@@ -827,6 +898,7 @@
     if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
     profilePreviewUrl = URL.createObjectURL(file);
     $("memberProfilePreview").src = profilePreviewUrl;
+    $("memberProfilePreview").classList.remove("hidden");
   });
   $("artistForm").addEventListener("submit", saveArtist);
   $("artworkForm").addEventListener("submit", saveArtwork);

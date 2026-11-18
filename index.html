@@ -230,7 +230,7 @@
         <p id="accountMessage"></p>
       </div>
       <div class="account-panel">
-        <img id="accountAvatar" class="account-avatar" src="default-profile.jfif" alt="Profile picture">
+        <img id="accountAvatar" class="account-avatar hidden" alt="Profile picture">
         <p id="accountDetails" class="status-line"></p>
       </div>
       <div class="member-tools" id="memberTools">
@@ -245,7 +245,7 @@
               <label>Medium or specialty<input id="memberProfileMedium" maxlength="100" placeholder="e.g. Painting"></label>
               <label>Bio<textarea id="memberProfileBio" maxlength="1000"></textarea></label>
               <label>Profile photo<input id="memberProfilePhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
-              <img id="memberProfilePreview" class="profile-preview" src="default-profile.jfif" alt="Profile photo preview">
+              <img id="memberProfilePreview" class="profile-preview hidden" alt="Profile photo preview">
               <p class="admin-help">JPEG, PNG, or WebP; maximum 5 MB.</p>
               <button class="button" type="submit" id="memberProfileSave">Save profile</button>
             </form>
@@ -328,10 +328,12 @@
       <form id="authForm">
         <div class="auth-field hidden" id="nameField"><label for="authName">Your name</label><input id="authName" value="Family Artist" maxlength="50" autocomplete="name"></div>
         <div class="auth-field"><label for="authEmail">Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
-        <div class="auth-field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
+        <div class="auth-field" id="passwordField"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
+        <div class="auth-field hidden" id="verificationField"><label for="authVerificationCode">Email verification code</label><input id="authVerificationCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" aria-describedby="authIntro"></div>
         <div class="auth-error" id="authError" role="alert"></div>
         <button class="button" id="authSubmit" type="submit" style="width:100%">Sign in</button>
       </form>
+      <button type="button" class="auth-switch hidden" id="verifyResend">Resend verification code</button>
       <button type="button" class="auth-switch" id="authSwitch">Create a user account</button>
     </div>
   </div>
