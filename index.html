@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f3ed">
+  <title>De Vera's Art Portfolio System</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fff2f7;
+      --ink: #20231f;
+      --muted: #81717a;
+      --line: #efd0dc;
+      --green: #a35270;
+      --green-dark: #803e59;
+      --lime: #f7dce5;
+      --white: #fffafd;
+      --serif: "Arial Rounded MT Bold", "Trebuchet MS", "Comic Sans MS", sans-serif;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", "Comic Sans MS", ui-rounded, system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(ellipse at 8% 12%, #f3b9ce 0, transparent 34%), radial-gradient(ellipse at 88% 18%, #f9d1df 0, transparent 38%), radial-gradient(ellipse at 77% 86%, #edbfd1 0, transparent 40%), linear-gradient(135deg, #fff4f8 0%, #fbe4ec 34%, #f7d8e4 68%, #fff5f8 100%); background-attachment: fixed; color: var(--ink); }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .shell { max-width: 1440px; margin: auto; padding: 0 6.1%; }
+    .topbar { height: 82px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; gap: 12px; align-items: center; text-decoration: none; }
+    .brand-mark { display: grid; place-items: center; height: 39px; width: 39px; border-radius: 50%; background: var(--green); color: var(--lime); font-family: var(--serif); font-size: 19px; }
+    .brand-name { font-family: var(--serif); font-size: 17px; line-height: 1.15; }
+    .brand-name span { display: block; font-family: inherit; font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: .04em; }
+    .nav { display: flex; align-items: center; gap: 30px; }
+    .nav a, .nav button { color: var(--ink); text-decoration: none; border: 0; background: none; font-size: 13px; }
+    .nav a:hover, .nav button:hover { color: var(--green); }
+    .button { border: 1px solid var(--green); background: var(--green); color: white; padding: 12px 19px; border-radius: 3px; font-size: 13px; transition: .18s ease; }
+    .button:hover { background: var(--green-dark); }
+    .button.outline { background: transparent; color: var(--green); }
+    .button.outline:hover { background: #e8eee8; }
+    .button.small { padding: 9px 13px; }
+    .button.dark { background: var(--ink); border-color: var(--ink); }
+    .account-label { max-width: 115px; display: inline-block; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .eyebrow { color: var(--green); font-size: 11px; letter-spacing: .17em; text-transform: uppercase; font-weight: 700; }
+    h1, h2, h3, p { margin-top: 0; }
+    .section { padding: 56px 0 69px; border-top: 1px solid var(--line); }
+    .home-gallery { min-height: calc(100vh - 150px); padding-top: 39px; border-top: 0; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+    .section-heading h2 { font-family: var(--serif); font-size: clamp(32px, 4vw, 46px); font-weight: 400; letter-spacing: -.04em; margin: 8px 0 0; }
+    .section-heading p { color: var(--muted); font-size: 13px; margin: 0 0 4px; }
+    .artist-carousel { position: relative; perspective: 1200px; }
+    .artist-grid { display: flex; gap: 22px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-behavior: smooth; scroll-padding-inline: 16%; scrollbar-width: none; padding: 0 16%; -webkit-overflow-scrolling: touch; }
+    .artist-grid::-webkit-scrollbar { display: none; }
+    .artist-card { position: relative; isolation: isolate; flex: 0 0 68%; width: 68%; min-width: 68%; text-align: left; border: 0; border-radius: 0; padding: 12px; background: transparent; color: inherit; scroll-snap-align: center; overflow: visible; opacity: .28; transform: scale(.78) translateY(16px); transition: transform .42s cubic-bezier(.2,.8,.2,1), opacity .35s ease, filter .35s ease; filter: saturate(.72); }
+    .artist-card::before { content: ""; position: absolute; z-index: -1; inset: 0; border: 2px solid #ffffffdf; border-radius: 18px; background: radial-gradient(circle at 18% 5%, #fff 0, #f9e3eb 48%, #efcbd9 100%); filter: drop-shadow(0 5px 8px #fff) drop-shadow(0 16px 20px #a3527044); pointer-events: none; }
+    .artist-card::before, .artist-card .artist-portrait { animation: profile-float 5s ease-in-out infinite; }
+    .artist-card:nth-child(even)::before, .artist-card:nth-child(even) .artist-portrait { animation-delay: -2.5s; }
+    .artist-card.is-active { z-index: 1; opacity: 1; transform: scale(1) translateY(-10px); filter: none; }
+    .artist-card.is-active:hover, .artist-card.is-active:focus-visible { transform: scale(1.035) translateY(-18px); }
+    .artist-card.is-prev, .artist-card.is-next { opacity: .62; filter: saturate(.86); }
+    .artist-card.is-prev { transform: scale(.84) translateX(7px) translateY(13px) rotateY(8deg); }
+    .artist-card.is-next { transform: scale(.84) translateX(-7px) translateY(13px) rotateY(-8deg); }
+    .artist-card:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+    .artist-portrait { height: min(64vh, 560px); min-height: 340px; position: relative; overflow: hidden; display: grid; place-items: center; border-radius: 12px; background: var(--portrait-color, #829078); }
+    .artist-portrait:after { content: ""; position: absolute; inset: 30% 0 0; background: linear-gradient(transparent, #141914d9); pointer-events: none; }
+    .artist-photo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .45s ease; }
+    .artist-card:hover .artist-photo, .artist-card:focus-visible .artist-photo { transform: scale(1.055); }
+    .portrait-initial { position: relative; font-family: var(--serif); color: #fffefa; font-size: 88px; opacity: .9; }
+    .artist-meta { position: absolute; z-index: 1; bottom: 0; left: 0; right: 0; padding: 22px; display: flex; justify-content: space-between; gap: 9px; align-items: flex-end; color: white; }
+    .artist-meta strong { display: block; font-family: var(--serif); font-size: 24px; font-weight: 400; }
+    .artist-meta small { display: block; color: #ffffffd9; font-size: 11px; margin-top: 5px; }
+    .artist-bio { display: block; max-height: 0; overflow: hidden; opacity: 0; color: #ffffffed; font-size: 12px; line-height: 1.5; transition: max-height .25s ease, opacity .25s ease, margin .25s ease; }
+    .artist-card:hover .artist-bio, .artist-card:focus-visible .artist-bio { max-height: 72px; opacity: 1; margin-top: 9px; }
+    .arrow { font-size: 20px; color: var(--green); }
+    .artist-meta .arrow { color: white; }
+    @keyframes profile-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .carousel-control { position: absolute; z-index: 3; top: 50%; display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: var(--white); color: var(--green); font-size: 22px; box-shadow: 0 3px 14px #0003; transform: translateY(-50%); }
+    .carousel-control:hover:not(:disabled) { background: var(--lime); }
+    .carousel-control:disabled { opacity: .42; cursor: default; }
+    .carousel-control.previous { left: 16px; }
+    .carousel-control.next { right: 16px; }
+    .carousel-caption { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; letter-spacing: .04em; padding-top: 12px; }
+    .art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 19px; }
+    .art-card { background: var(--white); border: 1px solid var(--line); }
+    .art-image { position: relative; height: 230px; overflow: hidden; background: #d6c6ab; }
+    .art-image img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .art-image .art-abstract { width: 100%; height: 100%; display: block; position: relative; overflow: hidden; }
+    .art-abstract:before, .art-abstract:after { content: ""; position: absolute; border-radius: 50%; }
+    .art-abstract:before { width: 175px; height: 175px; background: #fff8; left: 12%; top: 13%; }
+    .art-abstract:after { width: 135px; height: 205px; background: #263d35a8; right: 14%; bottom: -25%; transform: rotate(25deg); border-radius: 60% 60% 10% 10%; }
+    .art-info { padding: 14px 16px 15px; }
+    .art-info h3 { font-family: var(--serif); font-size: 19px; font-weight: 400; margin: 0 0 5px; }
+    .art-info p { color: var(--muted); font-size: 11px; margin: 0; }
+    .art-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 13px; }
+    .tag { display: inline-flex; align-items: center; border-radius: 99px; padding: 5px 9px; background: #eaf0e8; color: var(--green); font-size: 10px; text-transform: capitalize; }
+    .tag.pending { background: #fff2db; color: #8b5a11; }
+    .tag.rejected { background: #f9e3df; color: #9a3e34; }
+    .text-button { color: var(--green); background: none; border: 0; padding: 4px; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+    .empty { padding: 45px 20px; text-align: center; border: 1px dashed #c9c7bc; color: var(--muted); grid-column: 1 / -1; }
+    .empty strong { display: block; color: var(--ink); font-family: var(--serif); font-size: 20px; font-weight: 400; margin-bottom: 6px; }
+
+    .footer { padding: 25px 0 35px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 15px; color: var(--muted); font-size: 11px; }
+    .hidden { display: none !important; }
+    .toolbar { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .profile-panel { border: 1px solid var(--line); background: var(--white); padding: 20px; max-width: 620px; margin: 0 auto 30px; }
+    .profile-panel h3 { font-family: var(--serif); font-size: 23px; font-weight: 400; margin-bottom: 16px; }
+    .danger-zone { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 24px; padding-top: 19px; border-top: 1px solid var(--line); }
+    .danger-zone strong { display: block; font-size: 13px; color: #983d4d; }
+    .danger-zone p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
+    .button.danger { flex-shrink: 0; border-color: #b94e5d; background: #fff7f8; color: #983d4d; }
+    .button.danger:hover { background: #f9e3e8; }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .profile-photo-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .profile-photo-preview { width: 74px; height: 74px; border-radius: 50%; object-fit: cover; background: #e4e6dc; }
+    .profile-photo-preview.hidden { display: none; }
+    .profile-photo-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 11px; color: var(--muted); }
+    .field input, .field textarea, .field select { border: 1px solid var(--line); background: #fff; padding: 10px 11px; border-radius: 2px; color: var(--ink); outline: none; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--green); }
+    .field textarea { min-height: 95px; resize: vertical; }
+    .form-actions { display: flex; justify-content: end; gap: 9px; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: #1016129c; display: grid; place-items: center; padding: 20px; z-index: 20; }
+    .modal { width: min(440px, 100%); background: var(--paper); padding: 29px; box-shadow: 0 24px 80px #0004; position: relative; max-height: 94vh; overflow-y: auto; }
+    .modal h2 { font-family: var(--serif); font-weight: 400; font-size: 32px; margin: 9px 0 7px; }
+    .modal-intro { color: var(--muted); font-size: 12px; margin-bottom: 21px; line-height: 1.55; }
+    .close { position: absolute; top: 13px; right: 15px; border: 0; background: none; font-size: 24px; color: var(--muted); }
+    .modal-switch { font-size: 12px; color: var(--muted); text-align: center; margin: 17px 0 0; }
+    .modal-switch button { background: none; border: 0; color: var(--green); text-decoration: underline; }
+    .error { color: #9a3e34; font-size: 12px; min-height: 16px; margin: 8px 0; }
+    .upload-modal { width: min(560px, 100%); }
+    .review-actions { display: flex; gap: 7px; }
+    .review-actions .button { padding: 7px 10px; font-size: 11px; }
+    .button.reject { border-color: #b95b50; background: transparent; color: #9a3e34; }
+    .button.reject:hover { background: #f9e3df; }
+    .status-line { font-size: 12px; color: var(--muted); margin-top: 15px; }
+    .preview { width: 100%; max-height: 180px; object-fit: cover; margin-bottom: 10px; display: none; }
+    .profile-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 23px; }
+
+    @media (max-width: 850px) {
+      .shell { padding: 0 4%; }
+      .artist-grid { padding-inline: 13%; scroll-padding-inline: 13%; }
+      .artist-card { flex-basis: 74%; width: 74%; min-width: 74%; }
+      .artist-portrait { height: min(62vh, 460px); }
+      .nav { gap: 15px; }
+      .art-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .topbar { height: 70px; }
+      .nav a { display: none; }
+      .nav { gap: 11px; }
+      .nav .button { padding: 9px 11px; }
+      .section { padding: 43px 0 49px; }
+      .home-gallery { min-height: calc(100vh - 125px); padding-top: 29px; }
+      .section-heading { align-items: start; flex-direction: column; gap: 11px; }
+      .artist-grid { gap: 14px; padding-inline: 9%; scroll-padding-inline: 9%; }
+      .artist-card { flex-basis: 82%; width: 82%; min-width: 82%; }
+      .artist-portrait { height: min(61vh, 470px); min-height: 330px; }
+      .artist-meta { padding: 17px; }
+      .artist-meta strong { font-size: 22px; }
+      .artist-bio { max-height: 72px; opacity: 1; margin-top: 8px; }
+      .carousel-control { width: 40px; height: 40px; }
+      .carousel-control.previous { left: 10px; }
+      .carousel-control.next { right: 10px; }
+      .art-grid { grid-template-columns: 1fr; gap: 13px; }
+      .art-image { height: 240px; }
+      .footer { flex-direction: column; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .artist-card { transition: none; }
+      .artist-card.is-active { transform: translateY(-8px); }
+      .artist-photo { transition: none; }
+      .artist-card::before, .artist-card .artist-portrait { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="#" id="homeLink" aria-label="De Vera Art home">
+      <span class="brand-mark">D</span>
+      <span class="brand-name">De Vera's Art<span>FAMILY PORTFOLIO</span></span>
+    </a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="#homeView" id="artistsLink">Artists</a>
+      <button id="manageLink" class="hidden">My studio</button>
+      <button id="adminLink" class="hidden">Review posts</button>
+      <button class="button small" id="loginButton">login/sign-up</button>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="section home-gallery" id="homeView">
+      <div class="section-heading">
+        <div><div class="eyebrow">De Vera family artists</div><h2>Meet the artists</h2></div>
+        <p>Swipe one profile at a time. Hover to reveal the artist's story.</p>
+      </div>
+      <div class="artist-carousel">
+        <button type="button" class="carousel-control previous" id="previousArtist" aria-label="Previous artist">←</button>
+        <div class="artist-grid" id="artistGrid" aria-label="Artist profiles"></div>
+        <button type="button" class="carousel-control next" id="nextArtist" aria-label="Next artist">→</button>
+      </div>
+      <div class="carousel-caption"><span id="artistPosition">1 / 1</span><span>Swipe or use the arrows</span></div>
+    </section>
+
+    <section class="section hidden" id="portfolioSection">
+      <div class="profile-heading">
+        <div>
+          <div class="eyebrow" id="portfolioEyebrow">Artist portfolio</div>
+          <h2 id="portfolioTitle" style="font-family:var(--serif);font-size:clamp(34px,4vw,48px);font-weight:400;letter-spacing:-.04em;margin:8px 0"></h2>
+          <p id="portfolioBio" style="color:var(--muted);font-size:13px;margin:0"></p>
+        </div>
+        <button class="button outline small" id="backHomeButton">← All artists</button>
+      </div>
+      <div class="art-grid" id="portfolioGrid"></div>
+    </section>
+
+    <section class="section hidden" id="studioSection">
+      <div class="section-heading">
+        <div><div class="eyebrow">Your creative space</div><h2>My studio</h2></div>
+        <div class="toolbar">
+          <button class="button outline small" id="editProfileButton">Edit profile</button>
+          <button class="button small" id="uploadButton">+ Submit artwork</button>
+        </div>
+      </div>
+      <div class="profile-panel hidden" id="profilePanel">
+        <h3>Edit your artist profile</h3>
+        <form id="profileForm">
+          <div class="profile-grid">
+            <div class="field"><label for="profileName">Display name</label><input id="profileName" required maxlength="50"></div>
+            <div class="field"><label for="profileMedium">Art form / medium</label><input id="profileMedium" maxlength="60" placeholder="e.g. Painting, illustration"></div>
+            <div class="field full"><label for="profileBio">About you</label><textarea id="profileBio" maxlength="280" placeholder="A few words about your art..."></textarea></div>
+            <div class="field full">
+              <label for="profilePhotoInput">Profile picture (up to 2 MB)</label>
+              <div class="profile-photo-tools">
+                <img id="profilePhotoPreview" class="profile-photo-preview hidden" alt="Profile picture preview">
+                <div class="profile-photo-actions">
+                  <input id="profilePhotoInput" type="file" accept="image/*">
+                  <button type="button" class="text-button hidden" id="removeProfilePhoto">Remove picture</button>
+                </div>
+              </div>
+              <div class="error" id="profilePhotoError" role="alert"></div>
+            </div>
+          </div>
+          <div class="form-actions"><button type="button" class="button outline small" id="cancelProfile">Cancel</button><button class="button small">Save profile</button></div>
+        </form>
+        <div class="danger-zone">
+          <div><strong>Delete your account</strong><p>Your profile and all your artwork will be permanently removed.</p></div>
+          <button type="button" class="button danger small" id="deleteAccountButton">Delete account</button>
+        </div>
+      </div>
+      <div class="section-heading" style="margin-top:33px;margin-bottom:17px">
+        <div><h2 style="font-size:30px">Your submissions</h2></div>
+        <p>New and edited artwork is reviewed before it appears publicly.</p>
+      </div>
+      <div class="art-grid" id="studioGrid"></div>
+    </section>
+
+    <section class="section hidden" id="adminSection">
+      <div class="section-heading">
+        <div><div class="eyebrow">Curating the family gallery</div><h2>Post review</h2></div>
+        <p>Approve a submission to publish it in the artist's portfolio.</p>
+      </div>
+      <div class="art-grid" id="adminGrid"></div>
+    </section>
+
+  </main>
+  <footer class="shell footer">
+    <span>© <span id="year"></span> De Vera's Art Portfolio System</span>
+    <span>Celebrating the things we make, and the people we make them with.</span>
+  </footer>
+
+  <div class="modal-backdrop hidden" id="authBackdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal">
+      <button class="close" type="button" data-close="authBackdrop" aria-label="Close">×</button>
+      <div class="eyebrow">A place for every artist</div>
+      <h2 id="authTitle">Welcome back</h2>
+      <p class="modal-intro" id="authIntro">Sign in to manage your artist profile and artwork.</p>
+      <form id="authForm">
+        <div class="field hidden" id="nameField"><label for="authName">Your name</label><input id="authName" maxlength="50" autocomplete="name"></div>
+        <div class="field"><label for="authEmail">Email address</label><input id="authEmail" type="email" required autocomplete="email"></div>
+        <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></div>
+        <div class="error" id="authError" role="alert"></div>
+        <button class="button" id="authSubmit" style="width:100%">Sign in</button>
+      </form>
+      <p class="modal-intro" id="demoAccounts" style="margin:15px 0 0">Demo only: accounts and images stay in this browser, and passwords are not protected. Do not use real or reused passwords.</p>
+      <p class="modal-switch"><span id="switchPrompt">New to the family gallery?</span> <button type="button" id="switchAuth">Create an account</button></p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="uploadBackdrop" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <div class="modal upload-modal">
+      <button class="close" type="button" data-close="uploadBackdrop" aria-label="Close">×</button>
+      <div class="eyebrow">Add to your portfolio</div>
+      <h2 id="uploadTitle">Submit artwork</h2>
+      <p class="modal-intro">Your submission will be visible to the family admin for review before it is published.</p>
+      <form id="uploadForm">
+        <div class="field"><label for="artTitle">Artwork title</label><input id="artTitle" required maxlength="80"></div>
+        <div class="field"><label for="artDescription">Description</label><textarea id="artDescription" maxlength="240" placeholder="Tell us a little about this piece"></textarea></div>
+        <div class="field"><label for="artMedium">Medium</label><input id="artMedium" maxlength="50" placeholder="e.g. Watercolor on paper"></div>
+        <div class="field"><label for="artImage">Image (optional, up to 2 MB)</label><input id="artImage" type="file" accept="image/*"><img class="preview" id="imagePreview" alt="Artwork preview"></div>
+        <div class="error" id="uploadError" role="alert"></div>
+        <div class="form-actions"><button type="button" class="button outline small" data-close="uploadBackdrop">Cancel</button><button class="button small" id="uploadSubmit">Submit for review</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+      const STORAGE_KEY = "deVeraArtPortfolio.v1";
+      const SESSION_KEY = "deVeraArtPortfolio.session";
+      const ADMIN_EMAIL = "kienvalantindevera@gmail.com";
+      const ADMIN_PASSWORD = "";
+      const SAMPLE_ARTIST_IDS = ["artist-maria", "artist-jose", "artist-ana", "artist-luis"];
+      const SAMPLE_ARTWORK_IDS = ["art-1", "art-2", "art-3", "art-4", "art-5", "art-6"];
+      const palette = ["#9f775e", "#829078", "#9d8caf", "#c18a68", "#718995", "#b08e50"];
+      const seed = {
+        users: [
+          { id: "family-admin", name: "Family Admin", email: ADMIN_EMAIL, password: ADMIN_PASSWORD, medium: "Gallery curator", bio: "Keeping the family gallery in bloom.", role: "admin" }
+        ],
+        artworks: []
+      };
+
+      function readState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return structuredClone(seed);
+          const data = JSON.parse(saved);
+          if (!Array.isArray(data.users) || !Array.isArray(data.artworks)) throw new Error("Saved gallery data is invalid.");
+          let dataChanged = false;
+          if (data.familyNamesVersion !== 2) {
+            const nameUpdates = {
+              "artist-maria": ["Maria De Vera", "Kien De Vera"],
+              "artist-jose": ["Jose De Vera", "Dannah De Vera"],
+              "artist-ana": ["Ana De Vera", "Denniesse De Vera"],
+              "artist-luis": ["Luis De Vera", "Dennielle De Vera"]
+            };
+            data.users.forEach(user => {
+              const update = nameUpdates[user.id];
+              if (update && user.name === update[0]) {
+                user.name = update[1];
+                dataChanged = true;
+              }
+            });
+            data.familyNamesVersion = 2;
+            dataChanged = true;
+          }
+          if (data.initialProfilesRemovedVersion !== 3) {
+            const sampleArtistIds = new Set(SAMPLE_ARTIST_IDS);
+            data.users = data.users.filter(user => !sampleArtistIds.has(user.id));
+            data.artworks = data.artworks.filter(item => !SAMPLE_ARTWORK_IDS.includes(item.id) && !sampleArtistIds.has(item.userId));
+
+            const existingAdmin = data.users.find(user => String(user.email || "").toLowerCase() === ADMIN_EMAIL) ||
+              data.users.find(user => user.id === "family-admin");
+            if (existingAdmin) {
+              data.users = data.users.filter(user => user !== existingAdmin && user.id !== "family-admin" && String(user.email || "").toLowerCase() !== ADMIN_EMAIL);
+              existingAdmin.email = ADMIN_EMAIL;
+              existingAdmin.password = ADMIN_PASSWORD;
+              existingAdmin.role = "admin";
+              data.users.push(existingAdmin);
+            } else {
+              data.users.push(structuredClone(seed.users[0]));
+            }
+            data.initialProfilesRemovedVersion = 3;
+            dataChanged = true;
+          }
+          if (dataChanged) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            catch (error) { console.error("Could not save updated gallery data.", error); }
+          }
+          return data;
+        } catch (error) {
+          console.error("Could not load gallery data.", error);
+          return structuredClone(seed);
+        }
+      }
+
+      let state = readState();
+      let currentUser = null;
+      let portfolioUserId = null;
+      let authMode = "login";
+      let selectedImage = "";
+      let editingArtworkId = null;
+      let activeArtistIndex = 0;
+      let profilePhotoData = "";
+      let profilePhotoRemoved = false;
+      try {
+        const sessionId = sessionStorage.getItem(SESSION_KEY);
+        currentUser = state.users.find(user => user.id === sessionId) || null;
+      } catch (error) {
+        console.error("Could not restore the current session.", error);
+      }
+
+      const $ = id => document.getElementById(id);
+      const escapeHTML = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+      const save = () => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+        catch (error) {
+          console.error("Could not save gallery data.", error);
+          alert("Your changes could not be saved. This browser may be out of storage space.");
+          throw error;
+        }
+      };
+      const artworkUser = item => state.users.find(user => user.id === item.userId);
+
+      function showSection(section) {
+        $("homeView").classList.toggle("hidden", section !== "home");
+        $("portfolioSection").classList.toggle("hidden", section !== "portfolio");
+        $("studioSection").classList.toggle("hidden", section !== "studio");
+        $("adminSection").classList.toggle("hidden", section !== "admin");
+        if (section !== "portfolio") portfolioUserId = null;
+        if (section === "home") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          requestAnimationFrame(updateArtistPosition);
+        }
+      }
+
+      function updateArtistPosition() {
+        const track = $("artistGrid");
+        const cards = Array.from(track.querySelectorAll(".artist-card"));
+        const count = cards.length;
+        if (count && track.clientWidth) {
+          const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+          let closestDistance = Infinity;
+          cards.forEach((card, index) => {
+            const rect = card.getBoundingClientRect();
+            const distance = Math.abs(rect.left + rect.width / 2 - center);
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              activeArtistIndex = index;
+            }
+          });
+        } else {
+          activeArtistIndex = count ? Math.max(0, Math.min(count - 1, activeArtistIndex)) : 0;
+        }
+        cards.forEach((card, index) => {
+          card.classList.toggle("is-active", index === activeArtistIndex);
+          card.classList.toggle("is-prev", index === activeArtistIndex - 1);
+          card.classList.toggle("is-next", index === activeArtistIndex + 1);
+        });
+        $("artistPosition").textContent = count ? `${activeArtistIndex + 1} / ${count}` : "0 / 0";
+        $("previousArtist").disabled = count < 2 || activeArtistIndex === 0;
+        $("nextArtist").disabled = count < 2 || activeArtistIndex === count - 1;
+        $("previousArtist").classList.toggle("hidden", count < 2);
+        $("nextArtist").classList.toggle("hidden", count < 2);
+      }
+
+      function moveArtist(direction) {
+        const track = $("artistGrid");
+        if (!track.clientWidth) return;
+        const cards = track.querySelectorAll(".artist-card");
+        const nextIndex = Math.max(0, Math.min(cards.length - 1, activeArtistIndex + direction));
+        if (cards[nextIndex]) cards[nextIndex].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+
+      function renderArtists() {
+        const members = state.users.filter(user => user.role === "artist");
+        $("artistGrid").innerHTML = members.length ? members.map((user, index) => {
+          const count = state.artworks.filter(item => item.userId === user.id && item.status === "approved").length;
+          const color = palette[index % palette.length];
+          return `<button class="artist-card" data-artist="${escapeHTML(user.id)}">
+            <div class="artist-portrait" style="--portrait-color:${color}">
+              ${user.profileImage ? `<img class="artist-photo" src="${escapeHTML(user.profileImage)}" alt="Portrait of ${escapeHTML(user.name)}">` : `<span class="portrait-initial">${escapeHTML(user.name.charAt(0))}</span>`}
+              <div class="artist-meta"><div><strong>${escapeHTML(user.name)}</strong><small>${escapeHTML(user.medium || "Family artist")} · ${count} ${count === 1 ? "work" : "works"}</small><span class="artist-bio">${escapeHTML(user.bio || "A member of the De Vera family.")}</span></div><span class="arrow">↗</span></div>
+            </div>
+          </button>`;
+        }).join("") : `<div class="empty"><strong>No artists yet</strong>Create a family member account to get started.</div>`;
+        $("artistGrid").querySelectorAll("[data-artist]").forEach(card => card.addEventListener("click", () => openPortfolio(card.dataset.artist)));
+        $("artistGrid").scrollLeft = 0;
+        activeArtistIndex = 0;
+        updateArtistPosition();
+      }
+
+      function artMarkup(item, options) {
+        const owner = artworkUser(item);
+        const isAdmin = options && options.admin;
+        const showStatus = options && options.status;
+        const removable = options && options.owner;
+        const color = item.color || "#b7c4a4";
+        const image = item.imageData
+          ? `<img src="${item.imageData}" alt="${escapeHTML(item.title)}">`
+          : `<span class="art-abstract" style="background:${escapeHTML(color)}"></span>`;
+        let controls = "";
+        if (isAdmin && item.status === "pending") {
+          controls = `<div class="review-actions"><button class="button small" data-review="approve" data-id="${escapeHTML(item.id)}">Approve</button><button class="button reject" data-review="reject" data-id="${escapeHTML(item.id)}">Decline</button></div>`;
+        } else if (removable) {
+          controls = `<span><button class="text-button" data-edit="${escapeHTML(item.id)}">Edit</button><button class="text-button" data-delete="${escapeHTML(item.id)}">Delete</button></span>`;
+        }
+        return `<article class="art-card">
+          <div class="art-image">${image}</div>
+          <div class="art-info"><h3>${escapeHTML(item.title)}</h3>
+            <p>${escapeHTML(owner ? owner.name : "Family artist")} · ${escapeHTML(item.medium || "Artwork")}</p>
+            ${item.description ? `<p style="margin-top:8px;line-height:1.5">${escapeHTML(item.description)}</p>` : ""}
+            <div class="art-footer">${showStatus ? `<span class="tag ${escapeHTML(item.status)}">${escapeHTML(item.status)}</span>` : `<span class="tag">${escapeHTML(item.medium || "Artwork")}</span>`}${controls}</div>
+            ${item.status === "rejected" && item.reviewNote ? `<p class="status-line">Admin note: ${escapeHTML(item.reviewNote)}</p>` : ""}
+          </div>
+        </article>`;
+      }
+
+      function openPortfolio(userId) {
+        const user = state.users.find(item => item.id === userId);
+        if (!user) return;
+        portfolioUserId = userId;
+        $("portfolioTitle").textContent = user.name;
+        $("portfolioBio").textContent = [user.medium, user.bio].filter(Boolean).join(" · ") || "A member of the De Vera family.";
+        const works = state.artworks.filter(item => item.userId === userId && item.status === "approved");
+        $("portfolioGrid").innerHTML = works.length ? works.map(item => artMarkup(item)).join("") : `<div class="empty"><strong>Portfolio in progress</strong>This artist's approved work will appear here.</div>`;
+        showSection("portfolio");
+        $("portfolioSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function renderStudio() {
+        if (!currentUser) return;
+        const items = state.artworks.filter(item => item.userId === currentUser.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        $("studioGrid").innerHTML = items.length ? items.map(item => artMarkup(item, { status: true, owner: true })).join("") : `<div class="empty"><strong>Your gallery starts here</strong>Submit your first artwork for admin review.</div>`;
+        $("studioGrid").querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", () => {
+          if (!confirm("Delete this artwork submission?")) return;
+          state.artworks = state.artworks.filter(item => item.id !== button.dataset.delete);
+          save();
+          render();
+        }));
+        $("studioGrid").querySelectorAll("[data-edit]").forEach(button => button.addEventListener("click", () => {
+          const item = state.artworks.find(work => work.id === button.dataset.edit && work.userId === currentUser.id);
+          if (!item) return;
+          editingArtworkId = item.id;
+          selectedImage = "";
+          $("uploadForm").reset();
+          $("uploadError").textContent = "";
+          $("uploadTitle").textContent = "Edit artwork";
+          $("uploadSubmit").textContent = "Submit changes for review";
+          $("artTitle").value = item.title;
+          $("artDescription").value = item.description || "";
+          $("artMedium").value = item.medium || "";
+          $("imagePreview").style.display = "none";
+          if (item.imageData) {
+            $("imagePreview").src = item.imageData;
+            $("imagePreview").style.display = "block";
+          }
+          $("uploadBackdrop").classList.remove("hidden");
+          $("artTitle").focus();
+        }));
+      }
+
+      function renderAdmin() {
+        const pending = state.artworks.filter(item => item.status === "pending");
+        $("adminGrid").innerHTML = pending.length ? pending.map(item => artMarkup(item, { status: true, admin: true })).join("") : `<div class="empty"><strong>All caught up</strong>There are no submissions waiting for review.</div>`;
+        $("adminGrid").querySelectorAll("[data-review]").forEach(button => button.addEventListener("click", () => {
+          const item = state.artworks.find(work => work.id === button.dataset.id);
+          if (!item || item.status !== "pending") return;
+          item.status = button.dataset.review === "approve" ? "approved" : "rejected";
+          item.reviewNote = item.status === "rejected" ? (prompt("Optional note for the artist:") || "") : "";
+          save();
+          render();
+        }));
+      }
+
+      function render() {
+        renderArtists();
+        if (currentUser) {
+          $("loginButton").innerHTML = `<span class="account-label">${escapeHTML(currentUser.name)}</span> · Sign out`;
+          $("manageLink").classList.remove("hidden");
+          $("adminLink").classList.toggle("hidden", currentUser.role !== "admin");
+          renderStudio();
+          renderAdmin();
+        } else {
+          $("loginButton").textContent = "login/sign-up";
+          $("manageLink").classList.add("hidden");
+          $("adminLink").classList.add("hidden");
+        }
+        if (portfolioUserId) openPortfolio(portfolioUserId);
+      }
+
+      function openAuth(mode) {
+        authMode = mode;
+        $("authTitle").textContent = mode === "login" ? "Welcome back" : "Join the family";
+        $("authIntro").textContent = mode === "login" ? "Sign in to manage your artist profile and artwork." : "Create your artist account to share work with your family.";
+        $("demoAccounts").classList.toggle("hidden", mode !== "login");
+        $("nameField").classList.toggle("hidden", mode === "login");
+        $("authName").required = mode === "register";
+        $("authPassword").autocomplete = mode === "login" ? "current-password" : "new-password";
+        $("authSubmit").textContent = mode === "login" ? "Sign in" : "Create account";
+        $("switchPrompt").textContent = mode === "login" ? "New to the family gallery?" : "Already have an account?";
+        $("switchAuth").textContent = mode === "login" ? "Create an account" : "Sign in";
+        $("authError").textContent = "";
+        $("authForm").reset();
+        $("authBackdrop").classList.remove("hidden");
+        $("authEmail").focus();
+      }
+
+      function closeModal(id) {
+        $(id).classList.add("hidden");
+      }
+
+      $("homeLink").addEventListener("click", event => { event.preventDefault(); showSection("home"); });
+      $("artistsLink").addEventListener("click", () => showSection("home"));
+      $("artistGrid").addEventListener("scroll", updateArtistPosition, { passive: true });
+      $("previousArtist").addEventListener("click", () => moveArtist(-1));
+      $("nextArtist").addEventListener("click", () => moveArtist(1));
+      $("loginButton").addEventListener("click", () => {
+        if (!currentUser) { openAuth("login"); return; }
+        currentUser = null;
+        try { sessionStorage.removeItem(SESSION_KEY); } catch (error) { console.error("Could not clear the session.", error); }
+        $("profilePanel").classList.add("hidden");
+        showSection("home");
+        render();
+      });
+      $("manageLink").addEventListener("click", () => {
+        if (currentUser && currentUser.role === "admin") showSection("admin");
+        else { showSection("studio"); renderStudio(); }
+        $("studioSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      $("adminLink").addEventListener("click", () => { showSection("admin"); $("adminSection").scrollIntoView({ behavior: "smooth", block: "start" }); });
+      $("backHomeButton").addEventListener("click", () => showSection("home"));
+      $("editProfileButton").addEventListener("click", () => {
+        $("profileName").value = currentUser.name;
+        $("profileMedium").value = currentUser.medium || "";
+        $("profileBio").value = currentUser.bio || "";
+        profilePhotoData = currentUser.profileImage || "";
+        profilePhotoRemoved = false;
+        $("profilePhotoError").textContent = "";
+        $("profilePhotoInput").value = "";
+        $("profilePhotoPreview").classList.toggle("hidden", !profilePhotoData);
+        if (profilePhotoData) $("profilePhotoPreview").src = profilePhotoData;
+        $("removeProfilePhoto").classList.toggle("hidden", !profilePhotoData);
+        $("profilePanel").classList.remove("hidden");
+      });
+      $("cancelProfile").addEventListener("click", () => $("profilePanel").classList.add("hidden"));
+      $("profilePhotoInput").addEventListener("change", () => {
+        const file = $("profilePhotoInput").files[0];
+        $("profilePhotoError").textContent = "";
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          $("profilePhotoError").textContent = "Please choose an image file.";
+          $("profilePhotoInput").value = "";
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          $("profilePhotoError").textContent = "Please choose an image smaller than 2 MB.";
+          $("profilePhotoInput").value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          profilePhotoData = String(reader.result);
+          profilePhotoRemoved = false;
+          $("profilePhotoPreview").src = profilePhotoData;
+          $("profilePhotoPreview").classList.remove("hidden");
+          $("removeProfilePhoto").classList.remove("hidden");
+        };
+        reader.onerror = () => { $("profilePhotoError").textContent = "The image could not be read. Please try another file."; };
+        reader.readAsDataURL(file);
+      });
+      $("removeProfilePhoto").addEventListener("click", () => {
+        profilePhotoData = "";
+        profilePhotoRemoved = true;
+        $("profilePhotoInput").value = "";
+        $("profilePhotoPreview").classList.add("hidden");
+        $("removeProfilePhoto").classList.add("hidden");
+      });
+      $("profileForm").addEventListener("submit", event => {
+        event.preventDefault();
+        currentUser.name = $("profileName").value.trim();
+        currentUser.medium = $("profileMedium").value.trim();
+        currentUser.bio = $("profileBio").value.trim();
+        if (profilePhotoRemoved) delete currentUser.profileImage;
+        else if (profilePhotoData) currentUser.profileImage = profilePhotoData;
+        save();
+        $("profilePanel").classList.add("hidden");
+        profilePhotoData = "";
+        profilePhotoRemoved = false;
+        render();
+      });
+      $("deleteAccountButton").addEventListener("click", () => {
+        if (!currentUser || currentUser.role !== "artist") return;
+        const userId = currentUser.id;
+        const userName = currentUser.name;
+        if (!confirm(`Permanently delete ${userName}'s account and all of their artwork? This cannot be undone.`)) return;
+        state.users = state.users.filter(user => user.id !== userId);
+        state.artworks = state.artworks.filter(item => item.userId !== userId);
+        save();
+        currentUser = null;
+        try { sessionStorage.removeItem(SESSION_KEY); }
+        catch (error) { console.error("Could not clear the session after account deletion.", error); }
+        $("profilePanel").classList.add("hidden");
+        showSection("home");
+        render();
+        alert("Your account and artwork have been deleted.");
+      });
+      $("uploadButton").addEventListener("click", () => {
+        editingArtworkId = null;
+        $("uploadTitle").textContent = "Submit artwork";
+        $("uploadSubmit").textContent = "Submit for review";
+        $("uploadForm").reset();
+        $("uploadError").textContent = "";
+        $("imagePreview").style.display = "none";
+        selectedImage = "";
+        $("uploadBackdrop").classList.remove("hidden");
+        $("artTitle").focus();
+      });
+      $("artImage").addEventListener("change", () => {
+        const file = $("artImage").files[0];
+        selectedImage = "";
+        $("imagePreview").style.display = "none";
+        if (!file) return;
+        if (!file.type.startsWith("image/")) { $("uploadError").textContent = "Please choose an image file."; $("artImage").value = ""; return; }
+        if (file.size > 2 * 1024 * 1024) { $("uploadError").textContent = "Please choose an image smaller than 2 MB."; $("artImage").value = ""; return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          selectedImage = String(reader.result);
+          $("imagePreview").src = selectedImage;
+          $("imagePreview").style.display = "block";
+        };
+        reader.onerror = () => { $("uploadError").textContent = "The image could not be read. Please try another file."; };
+        reader.readAsDataURL(file);
+      });
+      $("uploadForm").addEventListener("submit", event => {
+        event.preventDefault();
+        if (!currentUser || currentUser.role !== "artist") return;
+        if (editingArtworkId) {
+          const artwork = state.artworks.find(item => item.id === editingArtworkId && item.userId === currentUser.id);
+          if (!artwork) { $("uploadError").textContent = "This artwork is no longer available to edit."; return; }
+          artwork.title = $("artTitle").value.trim();
+          artwork.description = $("artDescription").value.trim();
+          artwork.medium = $("artMedium").value.trim() || "Artwork";
+          artwork.status = "pending";
+          artwork.reviewNote = "";
+          if (selectedImage) artwork.imageData = selectedImage;
+        } else {
+          state.artworks.push({
+            id: "art-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            userId: currentUser.id,
+            title: $("artTitle").value.trim(),
+            description: $("artDescription").value.trim(),
+            medium: $("artMedium").value.trim() || "Artwork",
+            status: "pending",
+            createdAt: new Date().toISOString().slice(0, 10),
+            color: palette[Math.floor(Math.random() * palette.length)],
+            imageData: selectedImage
+          });
+        }
+        save();
+        editingArtworkId = null;
+        closeModal("uploadBackdrop");
+        showSection("studio");
+        render();
+      });
+      $("authForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const email = $("authEmail").value.trim().toLowerCase();
+        const password = $("authPassword").value;
+        if (authMode === "login") {
+          const user = state.users.find(item => item.email.toLowerCase() === email && item.password === password);
+          if (!user) { $("authError").textContent = "Email or password is incorrect."; return; }
+          currentUser = user;
+        } else {
+          const name = $("authName").value.trim();
+          if (!name) { $("authError").textContent = "Please enter your name."; return; }
+          if (state.users.some(item => item.email.toLowerCase() === email)) { $("authError").textContent = "An account with this email already exists."; return; }
+          currentUser = { id: "artist-" + Date.now().toString(36), name, email, password, medium: "", bio: "", role: "artist" };
+          state.users.push(currentUser);
+          save();
+        }
+        try { sessionStorage.setItem(SESSION_KEY, currentUser.id); }
+        catch (error) { console.error("Could not save the session.", error); }
+        closeModal("authBackdrop");
+        showSection(currentUser.role === "admin" ? "admin" : "studio");
+        render();
+      });
+      $("switchAuth").addEventListener("click", () => openAuth(authMode === "login" ? "register" : "login"));
+      document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
+      document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => {
+        if (event.target === backdrop) closeModal(backdrop.id);
+      }));
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") document.querySelectorAll(".modal-backdrop").forEach(backdrop => closeModal(backdrop.id));
+      });
+
+      $("year").textContent = new Date().getFullYear();
+      render();
+      showSection("home");
+      if (currentUser) showSection(currentUser.role === "admin" ? "admin" : "studio");
+    }());
+  </script>
+</body>
+</html>
