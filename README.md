@@ -1,19 +1,45 @@
 # De Vera's Art Portfolio System
 
-## Upload to GitHub
+This static site uses Supabase for authentication, shared artist profiles, artwork submissions, admin review, and image storage. The database and storage policies are defined in `supabase/schema.sql`.
 
-1. Create a GitHub repository.
-2. Choose **Add file → Upload files** and upload the files inside this folder, not the ZIP itself.
-3. Commit the upload to the repository.
-4. Confirm `index.html` and `vercel.json` are in the repository root.
+## 1. Create and configure Supabase
 
-## Deploy on Vercel
+1. Create a Supabase project.
+2. Open **SQL Editor**, paste all of `supabase/schema.sql`, and run it.
+3. In **Project Settings → API**, copy the Project URL and the publishable (or legacy `anon`) key. These browser values are public; never use a `service_role` or secret key in this site.
+4. Put the URL and publishable/anon key into `supabase-config.js`, replacing both `YOUR_...` placeholders.
+5. In **Authentication → URL Configuration**, set the Site URL to your Vercel domain. Add your Vercel preview/deployment URLs to the redirect URL allowlist if you use email confirmation.
 
-Import the GitHub repository as a new Vercel project. Set the Root Directory to the folder containing `index.html`, use the **Other** framework preset, and leave the build command empty. Redeploy after changing these settings.
+The SQL creates public artist profiles, private pending submissions, row-level security policies, and a public image bucket. Image URLs are publicly viewable; do not upload private images.
 
-## Important limitations
+## 2. Create the administrator
 
-- This is a browser-only demo. Accounts, artwork, and approvals are stored in each visitor's browser and are not shared across devices.
-- The seeded admin password is intentionally unset in this upload-safe copy. Do not put an admin password in client-side code.
-- A secure admin login and shared data require a server backend and a database; neither is included in this static package.
-- Do not use this demo for real authentication or private data.
+1. Deploy the site and create an account using `kienvalantindevera@gmail.com` and a password you choose.
+2. In the Supabase SQL Editor, run:
+
+   ```sql
+   update public.profiles
+   set role = 'admin'
+   where id = (
+     select id from auth.users
+     where lower(email) = lower('kienvalantindevera@gmail.com')
+   );
+   ```
+
+3. Sign out and sign back in. The account will then have access to **Review posts**.
+
+The admin password is managed by Supabase Authentication and is not embedded in this repository. Do not add a service key or password to client-side code.
+
+## 3. Upload to GitHub
+
+Upload the contents of this folder—not the ZIP itself—to the root of a GitHub repository. The root must contain `index.html`, `app.js`, `supabase-config.js`, and `vercel.json`.
+
+## 4. Deploy on Vercel
+
+Import the GitHub repository into Vercel. Set the Root Directory to the folder containing `index.html`, choose the **Other** framework preset, and leave the build command empty. Deploy or redeploy after configuring `supabase-config.js`.
+
+## Notes
+
+- Accounts created before connecting this Supabase project are stored only in their original browser and are not automatically imported. Create accounts again on the deployed site.
+- If Supabase email confirmation is enabled, new members must confirm their email before they can sign in.
+- Supabase free-tier service limits may apply. This project has no server-side service key; authorization is enforced by database row-level security.
