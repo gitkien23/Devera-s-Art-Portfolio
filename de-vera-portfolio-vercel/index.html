@@ -318,7 +318,7 @@
       const STORAGE_KEY = "deVeraArtPortfolio.v1";
       const SESSION_KEY = "deVeraArtPortfolio.session";
       const ADMIN_EMAIL = "kienvalantindevera@gmail.com";
-      const ADMIN_PASSWORD = "ampapotitot@23";
+      const ADMIN_PASSWORD = "";
       const SAMPLE_ARTIST_IDS = ["artist-maria", "artist-jose", "artist-ana", "artist-luis"];
       const SAMPLE_ARTWORK_IDS = ["art-1", "art-2", "art-3", "art-4", "art-5", "art-6"];
       const palette = ["#9f775e", "#829078", "#9d8caf", "#c18a68", "#718995", "#b08e50"];
@@ -353,7 +353,7 @@
             data.familyNamesVersion = 2;
             dataChanged = true;
           }
-          if (data.initialProfilesRemovedVersion !== 2) {
+          if (data.initialProfilesRemovedVersion !== 3) {
             const sampleArtistIds = new Set(SAMPLE_ARTIST_IDS);
             data.users = data.users.filter(user => !sampleArtistIds.has(user.id));
             data.artworks = data.artworks.filter(item => !SAMPLE_ARTWORK_IDS.includes(item.id) && !sampleArtistIds.has(item.userId));
@@ -369,7 +369,7 @@
             } else {
               data.users.push(structuredClone(seed.users[0]));
             }
-            data.initialProfilesRemovedVersion = 2;
+            data.initialProfilesRemovedVersion = 3;
             dataChanged = true;
           }
           if (dataChanged) {
