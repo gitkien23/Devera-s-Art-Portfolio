@@ -18,6 +18,10 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[char]));
 
+  function setAdminNotice(message) {
+    $("adminNotice").textContent = message || "";
+  }
+
   function setNotice(message) {
     $("setupNotice").textContent = message;
     $("setupNotice").classList.toggle("hidden", !message);
@@ -114,6 +118,30 @@
     </article>`;
   }
 
+  async function loadGallery() {
+    const [artistResult, artworkResult] = await Promise.all([
+      supabaseClient.from("devera_portfolio_artists")
+        .select("id,name,medium,bio,profile_image")
+        .order("created_at"),
+      supabaseClient.from("devera_portfolio_artworks")
+        .select("id,artist_id,title,medium,description,image_url")
+        .order("created_at")
+    ]);
+    if (artistResult.error) throw artistResult.error;
+    if (artworkResult.error) throw artworkResult.error;
+    artists.splice(0, artists.length, ...artistResult.data.map(artist => ({
+      ...artist,
+      profileImage: artist.profile_image
+    })));
+    artworks.splice(0, artworks.length, ...artworkResult.data.map(artwork => ({
+      ...artwork,
+      artistId: artwork.artist_id,
+      image: artwork.image_url
+    })));
+    renderArtists();
+    if (currentUser && currentUser.role === "admin") renderAdminLists();
+  }
+
   function openPortfolio(artistId) {
     const artist = artists.find(item => item.id === artistId);
     if (!artist) return;
@@ -127,9 +155,225 @@
     $("portfolioSection").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function renderAdminLists() {
+    if (!currentUser || currentUser.role !== "admin") return;
+    $("artistList").innerHTML = artists.length ? artists.map(artist => `
+      <div class="admin-item">
+        <div class="admin-item-copy"><strong>${escapeHTML(artist.name)}</strong><small>${escapeHTML(artist.medium || "Family artist")}</small></div>
+        <div class="admin-item-actions">
+          <button type="button" class="button outline" data-edit-artist="${escapeHTML(artist.id)}">Edit</button>
+          <button type="button" class="button dark" data-delete-artist="${escapeHTML(artist.id)}">Delete</button>
+        </div>
+      </div>`).join("") : `<p class="admin-empty">No artist profiles yet.</p>`;
+    $("artworkList").innerHTML = artworks.length ? artworks.map(artwork => {
+      const artist = artists.find(item => item.id === artwork.artist_id);
+      return `<div class="admin-item">
+        <div class="admin-item-copy"><strong>${escapeHTML(artwork.title)}</strong><small>${escapeHTML(artist ? artist.name : "Unknown artist")} · ${escapeHTML(artwork.medium || "Artwork")}</small></div>
+        <div class="admin-item-actions">
+          <button type="button" class="button outline" data-edit-artwork="${escapeHTML(artwork.id)}">Edit</button>
+          <button type="button" class="button dark" data-delete-artwork="${escapeHTML(artwork.id)}">Delete</button>
+        </div>
+      </div>`;
+    }).join("") : `<p class="admin-empty">No artworks yet.</p>`;
+    $("artworkArtist").innerHTML = artists.length
+      ? artists.map(artist => `<option value="${escapeHTML(artist.id)}">${escapeHTML(artist.name)}</option>`).join("")
+      : `<option value="">Add an artist first</option>`;
+    $("artworkArtist").disabled = artists.length === 0;
+    $("artworkSave").disabled = artists.length === 0;
+  }
+
+  async function loadAdminUsers() {
+    const { data, error } = await supabaseClient.from("profiles")
+      .select("id,email,display_name,role")
+      .order("created_at");
+    if (error) throw error;
+    $("userList").innerHTML = data.length ? data.map(profile => `
+      <div class="admin-item">
+        <div class="admin-item-copy">
+          <strong>${escapeHTML(profile.display_name || "Gallery member")}</strong>
+          <small>${escapeHTML(profile.email || "Email unavailable")} · ${profile.role === "admin" ? "Admin" : "User"}</small>
+        </div>
+        <div class="admin-item-actions">
+          ${profile.id === currentUser.id
+            ? `<span class="admin-help">You</span>`
+            : `<button type="button" class="button outline" data-user-id="${escapeHTML(profile.id)}" data-user-role="${escapeHTML(profile.role)}">${profile.role === "admin" ? "Make user" : "Make admin"}</button>`}
+        </div>
+      </div>`).join("") : `<p class="admin-empty">No user profiles found.</p>`;
+  }
+
+  async function saveArtist(event) {
+    event.preventDefault();
+    if (!currentUser || currentUser.role !== "admin") return;
+    const id = $("artistId").value;
+    const image = $("artistImage").value.trim();
+    if (/^[a-z][a-z0-9+.-]*:/i.test(image) && !/^https?:\/\//i.test(image)) {
+      setAdminNotice("Use an HTTPS image address or a relative file path.");
+      return;
+    }
+    const values = {
+      name: $("artistName").value.trim(),
+      medium: $("artistMedium").value.trim() || "Family artist",
+      bio: $("artistBio").value.trim(),
+      profile_image: image
+    };
+    $("artistSave").disabled = true;
+    setAdminNotice("");
+    try {
+      const result = id
+        ? await supabaseClient.from("devera_portfolio_artists").update(values).eq("id", id)
+        : await supabaseClient.from("devera_portfolio_artists").insert(values);
+      if (result.error) throw result.error;
+      $("artistForm").reset();
+      $("artistId").value = "";
+      $("artistCancel").classList.add("hidden");
+      $("artistSave").textContent = "Save artist";
+      await loadGallery();
+      setAdminNotice("Artist saved.");
+    } catch (error) {
+      console.error(error);
+      setAdminNotice(error.message || "Could not save this artist.");
+    } finally {
+      $("artistSave").disabled = false;
+    }
+  }
+
+  async function saveArtwork(event) {
+    event.preventDefault();
+    if (!currentUser || currentUser.role !== "admin") return;
+    const id = $("artworkId").value;
+    const image = $("artworkImage").value.trim();
+    if (/^[a-z][a-z0-9+.-]*:/i.test(image) && !/^https?:\/\//i.test(image)) {
+      setAdminNotice("Use an HTTPS image address or a relative file path.");
+      return;
+    }
+    const values = {
+      artist_id: $("artworkArtist").value,
+      title: $("artworkTitle").value.trim(),
+      medium: $("artworkMedium").value.trim() || "Artwork",
+      description: $("artworkDescription").value.trim(),
+      image_url: image
+    };
+    $("artworkSave").disabled = true;
+    setAdminNotice("");
+    try {
+      const result = id
+        ? await supabaseClient.from("devera_portfolio_artworks").update(values).eq("id", id)
+        : await supabaseClient.from("devera_portfolio_artworks").insert(values);
+      if (result.error) throw result.error;
+      $("artworkForm").reset();
+      $("artworkId").value = "";
+      $("artworkCancel").classList.add("hidden");
+      $("artworkSave").textContent = "Save artwork";
+      renderAdminLists();
+      await loadGallery();
+      setAdminNotice("Artwork saved.");
+    } catch (error) {
+      console.error(error);
+      setAdminNotice(error.message || "Could not save this artwork.");
+    } finally {
+      $("artworkSave").disabled = artists.length === 0;
+    }
+  }
+
+  function startArtistEdit(id) {
+    const artist = artists.find(item => item.id === id);
+    if (!artist) return;
+    $("artistId").value = artist.id;
+    $("artistName").value = artist.name;
+    $("artistMedium").value = artist.medium || "";
+    $("artistBio").value = artist.bio || "";
+    $("artistImage").value = artist.profile_image || "";
+    $("artistCancel").classList.remove("hidden");
+    $("artistSave").textContent = "Update artist";
+    $("artistName").focus();
+  }
+
+  function startArtworkEdit(id) {
+    const artwork = artworks.find(item => item.id === id);
+    if (!artwork) return;
+    $("artworkId").value = artwork.id;
+    $("artworkArtist").value = artwork.artist_id;
+    $("artworkTitle").value = artwork.title;
+    $("artworkMedium").value = artwork.medium || "";
+    $("artworkDescription").value = artwork.description || "";
+    $("artworkImage").value = artwork.image_url || "";
+    $("artworkCancel").classList.remove("hidden");
+    $("artworkSave").textContent = "Update artwork";
+    $("artworkTitle").focus();
+  }
+
+  async function handleAdminAction(event) {
+    const button = event.target.closest("button");
+    if (!button || !currentUser || currentUser.role !== "admin") return;
+    const artistId = button.dataset.editArtist;
+    const artworkId = button.dataset.editArtwork;
+    const deleteArtistId = button.dataset.deleteArtist;
+    const deleteArtworkId = button.dataset.deleteArtwork;
+    const userId = button.dataset.userId;
+    if (artistId) {
+      startArtistEdit(artistId);
+      return;
+    }
+    if (artworkId) {
+      startArtworkEdit(artworkId);
+      return;
+    }
+    if (deleteArtistId) {
+      const artist = artists.find(item => item.id === deleteArtistId);
+      if (!artist || !window.confirm(`Delete ${artist.name} and all of their artworks?`)) return;
+      try {
+        const { error } = await supabaseClient.from("devera_portfolio_artists").delete().eq("id", deleteArtistId);
+        if (error) throw error;
+        await loadGallery();
+        setAdminNotice("Artist and their artworks deleted.");
+      } catch (error) {
+        console.error(error);
+        setAdminNotice(error.message || "Could not delete this artist.");
+      }
+      return;
+    }
+    if (deleteArtworkId) {
+      const artwork = artworks.find(item => item.id === deleteArtworkId);
+      if (!artwork || !window.confirm(`Delete artwork "${artwork.title}"?`)) return;
+      try {
+        const { error } = await supabaseClient.from("devera_portfolio_artworks").delete().eq("id", deleteArtworkId);
+        if (error) throw error;
+        await loadGallery();
+        setAdminNotice("Artwork deleted.");
+      } catch (error) {
+        console.error(error);
+        setAdminNotice(error.message || "Could not delete this artwork.");
+      }
+      return;
+    }
+    if (userId) {
+      if (userId === currentUser.id) return;
+      const nextRole = button.dataset.userRole === "admin" ? "artist" : "admin";
+      button.disabled = true;
+      try {
+        const { error } = await supabaseClient.from("profiles")
+          .update({ role: nextRole })
+          .eq("id", userId);
+        if (error) throw error;
+        await loadAdminUsers();
+        setAdminNotice(`Account role changed to ${nextRole === "admin" ? "admin" : "user"}.`);
+      } catch (error) {
+        console.error(error);
+        setAdminNotice(error.message || "Could not change this account's role.");
+      }
+    }
+  }
+
+  async function loadAdminData() {
+    setAdminNotice("");
+    renderAdminLists();
+    await loadAdminUsers();
+  }
+
   async function loadAccount(authUser) {
     if (!authUser) {
       currentUser = null;
+      $("adminTools").classList.add("hidden");
       updateAuthControls();
       if (!$("accountSection").classList.contains("hidden")) showSection("home");
       return;
@@ -153,9 +397,18 @@
     $("accountDetails").textContent = `${currentUser.name} · ${currentUser.email}`;
     $("accountAvatar").src = data.profile_image || "default-profile.jfif";
     $("accountAvatar").alt = `${currentUser.name}'s profile picture`;
+    $("adminTools").classList.toggle("hidden", currentUser.role !== "admin");
     updateAuthControls();
     setNotice("");
     showSection("account");
+    if (currentUser.role === "admin") {
+      try {
+        await loadAdminData();
+      } catch (error) {
+        console.error(error);
+        setAdminNotice(`Could not load admin tools: ${error.message}`);
+      }
+    }
   }
 
   function openAuth(mode) {
@@ -255,6 +508,12 @@
       return;
     }
     supabaseClient = window.supabase.createClient(supabaseUrl, config.anonKey);
+    loadGallery().catch(error => {
+      console.error(error);
+      setNotice(error.code === "PGRST205"
+        ? "The gallery database is not set up yet. Run the updated supabase/setup.sql in Supabase SQL Editor."
+        : `Could not load the gallery: ${error.message}`);
+    });
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (["SIGNED_OUT", "SIGNED_IN", "INITIAL_SESSION", "TOKEN_REFRESHED"].includes(event)) {
         setTimeout(() => loadAccount(session && session.user).catch(error => {
@@ -282,6 +541,21 @@
   $("logoutButton").addEventListener("click", signOut);
   $("authSwitch").addEventListener("click", () => openAuth(authMode === "signup" ? "user" : "signup"));
   $("authForm").addEventListener("submit", submitAuth);
+  $("artistForm").addEventListener("submit", saveArtist);
+  $("artworkForm").addEventListener("submit", saveArtwork);
+  $("adminTools").addEventListener("click", event => { handleAdminAction(event); });
+  $("artistCancel").addEventListener("click", () => {
+    $("artistForm").reset();
+    $("artistId").value = "";
+    $("artistCancel").classList.add("hidden");
+    $("artistSave").textContent = "Save artist";
+  });
+  $("artworkCancel").addEventListener("click", () => {
+    $("artworkForm").reset();
+    $("artworkId").value = "";
+    $("artworkCancel").classList.add("hidden");
+    $("artworkSave").textContent = "Save artwork";
+  });
   $("closeAuth").addEventListener("click", closeAuth);
   $("authBackdrop").addEventListener("click", event => {
     if (event.target === $("authBackdrop")) closeAuth();
